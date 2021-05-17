@@ -4,6 +4,7 @@ import { PriceUpdate, watchSushiwapPairs } from './price-updates/pair-updates';
 import { watchLimitOrders, stopReceivingOrders } from './orders/txReceiver';
 import { validOrders } from './orders/validOrders';
 import { executableOrders } from './orders/profitability';
+import { executeOrders } from './orders/execute';
 
 async function init() {
 
@@ -28,11 +29,15 @@ async function init() {
   // subscribe to price updates of pools & execute orders
   watchSushiwapPairs(watchPairs).subscribe(async (priceUpdate: PriceUpdate) => {
 
+
     // one of the two arrays should generally be empty
     const buyOrders = await executableOrders(priceUpdate, await validOrders(await database.getLimitOrders(Side.Buy, priceUpdate.price.toString(), priceUpdate.pair.pairAddress)));
     const sellOrders = await executableOrders(priceUpdate, await validOrders(await database.getLimitOrders(Side.Sell, priceUpdate.price.toString(), priceUpdate.pair.pairAddress)));
 
-    executableOrders
+
+    await executeOrders(buyOrders);
+    await executeOrders(sellOrders);
+
 
   });
 
