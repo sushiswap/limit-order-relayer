@@ -1,6 +1,11 @@
 import Mongoose from "mongoose";
-import { IWatchPairModel } from "./models";
-import { ethers } from "ethers";
+import { ILimitOrder, ILimitOrderModel, IWatchPairModel } from "./models";
+import { isLessThan } from "../utils/orderTokens";
+import { getPairAddress } from "../utils/pairAddress";
+
+require('mongoose-long')(Mongoose);
+
+const Long = (Mongoose.Types as any).Long;
 
 const Schema = Mongoose.Schema;
 
@@ -18,26 +23,57 @@ export const watchPairModel = new Schema({
   pairAddress: String
 })
 
+export const limitOrderModel = new Schema({
+  price: Long,
+  digest: { type: String, unique: true },
+  order: {
+    maker: String,
+    tokenIn: String,
+    tokenOut: String,
+    tokenInDecimals: Number,
+    tokenOutDecimals: Number,
+    amountIn: String,
+    amountOut: String,
+    recipient: String,
+    startTime: String,
+    endTime: String,
+    stopPrice: String,
+    oracleAddress: String,
+    oracleData: String,
+    v: Number,
+    r: String,
+    s: String,
+    chainId: Number
+  },
+  side: Number,
+  pairAddress: String,
+  filledAmount: String
+});
+
 watchPairModel.set("collection", "watchpairs");
+limitOrderModel.set("collection", "limitorders");
+
 
 // middleware - execute before saving a "watch pair"
 watchPairModel.pre<IWatchPairModel>("save", function (next) {
 
   // sort tokens so token0 < token1 always holds true
-  if (ethers.BigNumber.from(this.token0.address).gt(ethers.BigNumber.from(this.token1.address))) {
+  if (!isLessThan(this.token0.address, this.token1.address)) {
     const tmp = { ...this.token0 };
     this.token0 = { ...this.token1 };
     this.token1 = tmp;
   }
 
-  const pairCodeHash = "0xe18a34eb0e04b04f7a0ac29a6e80748dca96319b42c54d679cb821dca90c6303";
-  const factory = "0xC0AEe478e3658e2610c5F7A4A2E1777cE9e4f2Ac";
-
-  this.pairAddress = ethers.utils.getCreate2Address(
-    factory,
-    ethers.utils.keccak256(ethers.utils.solidityPack(['address', 'address'], [this.token0.address, this.token1.address])),
-    pairCodeHash
-  );
+  this.pairAddress = getPairAddress(this.token0.address, this.token1.address);
 
   next();
+
+});
+
+limitOrderModel.pre<ILimitOrderModel>("save", function (next) {
+
+  this.pairAddress = getPairAddress(this.order.tokenIn, this.order.tokenOut);
+
+  next();
+
 });

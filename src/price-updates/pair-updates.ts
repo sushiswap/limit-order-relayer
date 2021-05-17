@@ -1,8 +1,8 @@
-import { IWatchPair } from "./models/models";
+import { IWatchPair } from "../models/models";
 import { BigNumber, ethers } from "ethers";
 import { Observable, Subject } from 'rxjs';
 import dotenv from 'dotenv';
-import ERC20_ABI from './abis/erc20';
+import ERC20_ABI from '../abis/erc20';
 
 dotenv.config();
 

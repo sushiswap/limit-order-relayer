@@ -1,4 +1,4 @@
-import { _limitOrderPairs } from './pairs';
+import { _limitOrderPairs } from '../config/pairs';
 import axios, { AxiosResponse } from 'axios';
 import { IWatchPair } from '../models/models';
 
@@ -6,6 +6,11 @@ const tokenListUrl = "https://tokens.coingecko.com/uniswap/all.json";
 
 interface IToken { chainId: number, address: string, name: string, symbol: string, decimals: number, logoUrl: string };
 interface ITokenList { name: string, logoURL: string, keywords: any, timestamp: any, tokens: IToken[], version: any };
+
+/**
+ * Fetch token data from Coingecko's tokenlist
+ * Takes pairs (e.g. ['WETH', 'USDC']) and fetches WETH & USDC data: contract address, no. of decimals ...
+ */
 
 export const getLimitOrderPairs = async (): Promise<IWatchPair[]> => {
 
