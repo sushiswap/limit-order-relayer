@@ -1,50 +1,66 @@
 import { Database } from './database/database';
-import { Side } from './models/models';
+import { ILimitOrder, Side } from './models/models';
 import { PriceUpdate, watchSushiwapPairs } from './price-updates/pair-updates';
 import { watchLimitOrders, stopReceivingOrders } from './orders/txReceiver';
 import { validOrders } from './orders/validOrders';
 import { executableOrders } from './orders/profitability';
 import { executeOrders } from './orders/execute';
+import { Observable } from 'rxjs';
 
-async function init() {
+export class LimitOrderRelayer {
 
+  private LimitOrderUpdates: Observable<ILimitOrder>;
+  private SushiswapPairUpdates: Observable<PriceUpdate>;
+  private execute: (a: ILimitOrder[]) => void;
 
-  const database = Database.Instance;
+  private database: Database;
 
+  constructor(orderUpdates, pairUpdates, database, execute) {
 
-  await database.connectDB();
+    this.LimitOrderUpdates = orderUpdates;
+    this.SushiswapPairUpdates = pairUpdates;
+    this.database = database;
+    this.execute = execute;
 
+  }
 
-  // which pairs we execute limit orders for
-  const watchPairs = await database.setWatchPairs();
-
-
-  if (!watchPairs || watchPairs.length == 0) return console.log('No pairs to watch');
-
-
-  // save incomming limit orders into a DB
-  watchLimitOrders(watchPairs).subscribe(database.saveLimitOrder);
-
-
-  // subscribe to price updates of pools & execute orders
-  watchSushiwapPairs(watchPairs).subscribe(async (priceUpdate: PriceUpdate) => {
+  public async init() {
 
 
-    // one of the two arrays should generally be empty
-    const buyOrders = await executableOrders(priceUpdate, await validOrders(await database.getLimitOrders(Side.Buy, priceUpdate.price.toString(), priceUpdate.pair.pairAddress)));
-    const sellOrders = await executableOrders(priceUpdate, await validOrders(await database.getLimitOrders(Side.Sell, priceUpdate.price.toString(), priceUpdate.pair.pairAddress)));
+    await this.database.connectDB();
 
 
-    await executeOrders(buyOrders);
-    await executeOrders(sellOrders);
+    // which pairs we execute limit orders for
+    const watchPairs = await this.database.setWatchPairs();
 
 
-  });
+    if (!watchPairs || watchPairs.length == 0) return console.log('No pairs to watch');
+
+
+    // save incomming limit orders into a DB
+    watchLimitOrders(watchPairs).subscribe(this.database.saveLimitOrder);
+
+
+    // subscribe to price updates of pools & execute orders
+    watchSushiwapPairs(watchPairs).subscribe(async (priceUpdate: PriceUpdate) => {
+
+
+      // one of the two arrays should generally be empty
+      const buyOrders = await executableOrders(priceUpdate, await validOrders(await this.database.getLimitOrders(Side.Buy, priceUpdate.price.toString(), priceUpdate.pair.pairAddress)));
+      const sellOrders = await executableOrders(priceUpdate, await validOrders(await this.database.getLimitOrders(Side.Sell, priceUpdate.price.toString(), priceUpdate.pair.pairAddress)));
+
+
+      await this.execute(buyOrders);
+      await this.execute(sellOrders);
+
+
+    });
+
+  }
 
 }
 
-
-init();
-
+// use parameters for easier testing
+new LimitOrderRelayer(watchLimitOrders, watchSushiwapPairs, Database.Instance, executeOrders).init();
 
 process.on('exit', () => { stopReceivingOrders(); Database.Instance.disconnectDB(); });
