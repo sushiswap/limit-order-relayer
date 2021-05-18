@@ -1,5 +1,5 @@
 import { Database } from './database/database';
-import { ILimitOrder, Side } from './models/models';
+import { ILimitOrder, IWatchPair, Side } from './models/models';
 import { PriceUpdate, watchSushiwapPairs } from './price-updates/pair-updates';
 import { watchLimitOrders, stopReceivingOrders } from './orders/txReceiver';
 import { validOrders } from './orders/validOrders';
@@ -9,8 +9,8 @@ import { Observable } from 'rxjs';
 
 export class LimitOrderRelayer {
 
-  private LimitOrderUpdates: Observable<ILimitOrder>;
-  private SushiswapPairUpdates: Observable<PriceUpdate>;
+  private LimitOrderUpdates: (a: IWatchPair[]) => Observable<ILimitOrder>;
+  private SushiswapPairUpdates: (a: IWatchPair[]) => Observable<PriceUpdate>;
   private execute: (a: ILimitOrder[]) => void;
 
   private database: Database;
@@ -38,11 +38,11 @@ export class LimitOrderRelayer {
 
 
     // save incomming limit orders into a DB
-    watchLimitOrders(watchPairs).subscribe(this.database.saveLimitOrder);
+    this.LimitOrderUpdates(watchPairs).subscribe(this.database.saveLimitOrder);
 
 
     // subscribe to price updates of pools & execute orders
-    watchSushiwapPairs(watchPairs).subscribe(async (priceUpdate: PriceUpdate) => {
+    this.SushiswapPairUpdates(watchPairs).subscribe(async (priceUpdate: PriceUpdate) => {
 
 
       // fetch limit orders that might be ready for execution
