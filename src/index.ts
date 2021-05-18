@@ -3,7 +3,7 @@ import { ILimitOrder, Side } from './models/models';
 import { PriceUpdate, watchSushiwapPairs } from './price-updates/pair-updates';
 import { watchLimitOrders, stopReceivingOrders } from './orders/txReceiver';
 import { validOrders } from './orders/validOrders';
-import { executableOrders } from './orders/profitability';
+import { profitableOrders } from './orders/profitability';
 import { executeOrders } from './orders/execute';
 import { Observable } from 'rxjs';
 
@@ -51,8 +51,8 @@ export class LimitOrderRelayer {
       const _sellOrders = await this.database.getLimitOrders(Side.Sell, priceUpdate.price.toString(), priceUpdate.pair.pairAddress)
 
       // filter out orders that have already been executed & that aren't profitable
-      const buyOrders = await executableOrders(priceUpdate, await validOrders(_buyOrders));
-      const sellOrders = await executableOrders(priceUpdate, await validOrders(_sellOrders));
+      const buyOrders = await profitableOrders(priceUpdate, await validOrders(_buyOrders));
+      const sellOrders = await profitableOrders(priceUpdate, await validOrders(_sellOrders));
 
 
       await this.execute(buyOrders);
