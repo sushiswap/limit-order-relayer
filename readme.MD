@@ -4,7 +4,7 @@ Limit orders have a tokenIn and a tokenOut parameter. This service sorts the tok
 
 `token0, token1 = sort(tokenIn, tokenOut)`
 
-If `token0 === tokenIn` Then the service considers this as a sell order
+If `token0 === tokenIn` Then the service considers this as a sell order.
 
 If `token1 === tokenIn` Then the service considers this as a buy order.
 
