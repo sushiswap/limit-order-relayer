@@ -45,9 +45,14 @@ export class LimitOrderRelayer {
     watchSushiwapPairs(watchPairs).subscribe(async (priceUpdate: PriceUpdate) => {
 
 
+      // fetch limit orders that might be ready for execution
       // one of the two arrays should generally be empty
-      const buyOrders = await executableOrders(priceUpdate, await validOrders(await this.database.getLimitOrders(Side.Buy, priceUpdate.price.toString(), priceUpdate.pair.pairAddress)));
-      const sellOrders = await executableOrders(priceUpdate, await validOrders(await this.database.getLimitOrders(Side.Sell, priceUpdate.price.toString(), priceUpdate.pair.pairAddress)));
+      const _buyOrders = await this.database.getLimitOrders(Side.Buy, priceUpdate.price.toString(), priceUpdate.pair.pairAddress)
+      const _sellOrders = await this.database.getLimitOrders(Side.Sell, priceUpdate.price.toString(), priceUpdate.pair.pairAddress)
+
+      // filter out orders that have already been executed & that aren't profitable
+      const buyOrders = await executableOrders(priceUpdate, await validOrders(_buyOrders));
+      const sellOrders = await executableOrders(priceUpdate, await validOrders(_sellOrders));
 
 
       await this.execute(buyOrders);

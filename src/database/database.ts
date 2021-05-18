@@ -1,4 +1,4 @@
-import Mongoose from "mongoose";
+import Mongoose, { UpdateWriteOpResult } from "mongoose";
 import { limitOrderModel, watchPairModel } from "../models/mongooseModels";
 import { ILimitOrder, ILimitOrderModel, IWatchPair, IWatchPairModel, Side } from "../models/models";
 import { getLimitOrderPairs } from "../utils/watchPairs";
@@ -90,12 +90,12 @@ export class Database {
     }
   }
 
-  public async updateLimitOrders(orders: ILimitOrder[]): Promise<ILimitOrder[]> {
-    return orders; // TODO
+  public async updateLimitOrders(orders: ILimitOrder[]): Promise<UpdateWriteOpResult[]> {
+    return Promise.all(orders.map(order => this.LimitOrderModel.updateOne({ digest: order.digest }, order).exec())); // TODO test this
   }
 
-  public async deleteLimitOrders(orders: ILimitOrder[]): Promise<ILimitOrder[]> {
-    return orders; // TODO
+  public async deleteLimitOrders(orders: ILimitOrder[]): Promise<{ ok?: number }[]> {
+    return Promise.all(orders.map(order => this.LimitOrderModel.deleteOne({ digest: order.digest }).exec())); // TODO test
   }
 
 }
