@@ -38,14 +38,14 @@ export async function validOrders(orders: ILimitOrder[]): Promise<ILimitOrder[]>
   return validOrders;
 }
 
-async function isOrderFilled(limitOrder: LimitOrder, stopLimitOrderContract: Contract): bool {
+async function isOrderFilled(limitOrder: LimitOrder, stopLimitOrderContract: Contract): Promise<boolean> {
   let digest = limitOrder.getTypeHash(limitOrder.chainId);
   let orderStatus = await stopLimitOrderContract.cancelledOrder(limitOrder.maker, digest);
   if(orderStatus) return false;
   return true;
 }
 
-async function isOrderCancel(limitOrder: LimitOrder, stopLimitOrderContract: Contract): bool {
+async function isOrderCancel(limitOrder: LimitOrder, stopLimitOrderContract: Contract): Promise<boolean> {
   let digest = limitOrder.getTypeHash(limitOrder.chainId);
   let orderStatus = await stopLimitOrderContract.orderStatus(digest);
   if(Number(orderStatus) == Number(limitOrder.amountOutRaw)) return false;
