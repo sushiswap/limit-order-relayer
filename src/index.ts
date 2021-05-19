@@ -1,5 +1,5 @@
 import { Database } from './database/database';
-import { ILimitOrder, IWatchPair, Side } from './models/models';
+import { ILimitOrder, IWatchPair } from './models/models';
 import { PriceUpdate, watchSushiwapPairs } from './price-updates/pair-updates';
 import { watchLimitOrders, stopReceivingOrders } from './orders/txReceiver';
 import { validOrders } from './orders/validOrders';
@@ -47,16 +47,19 @@ export class LimitOrderRelayer {
 
       // fetch limit orders that might be ready for execution
       // one of the two arrays should generally be empty
-      const _buyOrders = await this.database.getLimitOrders(Side.Buy, priceUpdate.price.toString(), priceUpdate.pair.pairAddress)
-      const _sellOrders = await this.database.getLimitOrders(Side.Sell, priceUpdate.price.toString(), priceUpdate.pair.pairAddress)
+      const _token0Orders = await this.database.getLimitOrders(priceUpdate.token0.price, priceUpdate.pair.pairAddress, priceUpdate.token0.address);
+      const _token1Orders = await this.database.getLimitOrders(priceUpdate.token1.price, priceUpdate.pair.pairAddress, priceUpdate.token1.address);
 
       // filter out orders that have already been executed & that aren't profitable
-      const buyOrders = await profitableOrders(priceUpdate, await validOrders(_buyOrders));
-      const sellOrders = await profitableOrders(priceUpdate, await validOrders(_sellOrders));
+      const token0Orders = await profitableOrders(priceUpdate, await validOrders(_token0Orders));
+      const token1Orders = await profitableOrders(priceUpdate, await validOrders(_token1Orders));
 
+      console.log(token0Orders);
+      console.log('-----------------------');
+      console.log(token1Orders);
 
-      await this.execute(buyOrders);
-      await this.execute(sellOrders);
+      await this.execute(token0Orders);
+      await this.execute(token1Orders);
 
 
     });

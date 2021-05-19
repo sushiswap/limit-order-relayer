@@ -1,5 +1,5 @@
 /**
- * Note: profit will be taken either in either token of the pool
+ * Note: profit will be taken in either token of the pool
 */
 export const _limitOrderPairs: string[][] = [
   ["WETH", "DAI"],

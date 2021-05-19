@@ -1,10 +1,5 @@
-import { LimitOrderRelayer } from '../src/index';
-import { expect } from 'chai';
-import { watchLimitOrders } from '../src/orders/txReceiver';
-import { watchSushiwapPairs } from '../src/price-updates/pair-updates';
 import { Database } from '../src/database/database';
-import { executeOrders } from '../src/orders/execute';
-import { ILimitOrder, IWatchPair, Side } from '../src/models/models';
+import { ILimitOrder } from '../src/models/models';
 import { Observable, of } from 'rxjs';
 import { getLimitOrderPairs } from '../src/utils/watchPairs';
 
@@ -39,13 +34,12 @@ function mockLimitOrderWatcher(): Observable<ILimitOrder> {
       s: "",
       chainId: 1
     },
-    side: Side.Buy,
     pairAddress: "0x",
     filledAmount: "0",
   });
 }
 
-class MochDatabase extends Database {
+class MockDatabase extends Database {
   private mockPromise = (a) => new Promise<any>((r, re) => r(a));
   connectDB(): Promise<void> { return; };
   setWatchPairs() { return this.mockPromise([]) };

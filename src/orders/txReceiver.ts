@@ -2,7 +2,7 @@ import { BigNumber } from '@ethersproject/bignumber';
 import { ILimitOrderData, LimitOrder } from 'limitorderv2-sdk';
 import { Observable, Subject } from 'rxjs';
 import { IMessageEvent, w3cwebsocket } from 'websocket';
-import { IWatchPair, Side, ILimitOrder } from '../models/models';
+import { IWatchPair, ILimitOrder } from '../models/models';
 import { PRICE_MULTIPLIER } from '../price-updates/pair-updates';
 import { isLessThan } from '../utils/orderTokens';
 import { validLimitOrderData } from './validOrders';
@@ -30,15 +30,19 @@ const onError = (e) => console.log('SOCKET ERROR ', e.reason);
 
 const onClose = (m) => console.log('SOCKET CLOSED');
 
-const onOpen = () => console.log('Connected to the Sushi Relayer Service');
+const onOpen = () => {
+  clearInterval(intervalPointer);
+  intervalPointer = setInterval(heartbeat, 5000);
+  console.log('Connected to the Sushi Relayer Service');
+};
 
 const heartbeat = async () => {
   if (socket.readyState !== socket.OPEN) {
-    console.log('starting socket again')
     startSocket(socketUrl, onMessageFunction);
   }
 }
 
+// receive orders from the websocket
 export function watchLimitOrders(watchPairs: IWatchPair[]): Observable<ILimitOrder> {
 
   const updates = new Subject<ILimitOrder>();
@@ -51,25 +55,9 @@ export function watchLimitOrders(watchPairs: IWatchPair[]): Observable<ILimitOrd
 
     const digest = LimitOrder.getLimitOrder(order).getDigest();
 
-    let side: Side
-    let price: string;
+    const price = BigNumber.from(order.amountOut).mul(PRICE_MULTIPLIER).div(BigNumber.from(order.amountIn)).toString();
 
-    if (isLessThan(order.tokenIn, order.tokenOut)) {
-
-      price = BigNumber.from(order.amountIn).mul(PRICE_MULTIPLIER).div(BigNumber.from(order.amountOut)).toString();
-      side = Side.Sell;
-
-    } else {
-
-      price = BigNumber.from(order.amountOut).mul(PRICE_MULTIPLIER).div(BigNumber.from(order.amountIn)).toString();
-      side = Side.Buy;
-
-    }
-
-    clearInterval(intervalPointer);
-    intervalPointer = setInterval(heartbeat, 5000);
-
-    updates.next({ price, digest, order, side, filledAmount: "0" });
+    updates.next({ price, digest, order, filledAmount: "0" });
 
   });
 

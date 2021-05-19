@@ -12,9 +12,16 @@ export const PRICE_MULTIPLIER = BigNumber.from(1e18.toString());
 
 export interface PriceUpdate {
   pair: IWatchPair,
-  token0Balance: BigNumber,
-  token1Balance: BigNumber,
-  price: BigNumber // price is calculated as (token0Balance * {PRICE_MULTIPLIER}) / token1Balance
+  token0: {
+    poolBalance: BigNumber,
+    price: BigNumber, // price is calculated as (token1Balance * {PRICE_MULTIPLIER}) / token0Balance
+    address: string
+  },
+  token1: {
+    poolBalance: BigNumber,
+    price: BigNumber, // price is calculated as (token0Balance * {PRICE_MULTIPLIER}) / token1Balance
+    address: string
+  }
 }
 
 export function watchSushiwapPairs(watchPairs: IWatchPair[]): Observable<PriceUpdate> {
@@ -32,7 +39,20 @@ export function watchSushiwapPairs(watchPairs: IWatchPair[]): Observable<PriceUp
     provider.on(filter, async () => {
 
       const { token0Balance, token1Balance } = await getPairBalances(pair);
-      updates.next({ pair, token0Balance, token1Balance, price: (token0Balance.mul(PRICE_MULTIPLIER)).div(token1Balance) });
+
+      const token0 = {
+        price: (token1Balance.mul(PRICE_MULTIPLIER)).div(token0Balance),
+        poolBalance: token0Balance,
+        address: pair.token0.address
+      };
+
+      const token1 = {
+        price: (token0Balance.mul(PRICE_MULTIPLIER)).div(token1Balance),
+        poolBalance: token1Balance,
+        address: pair.token1.address
+      };
+
+      updates.next({ pair, token0, token1 });
 
     });
 

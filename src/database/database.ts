@@ -1,7 +1,8 @@
 import Mongoose, { UpdateWriteOpResult } from "mongoose";
 import { limitOrderModel, watchPairModel } from "../models/mongooseModels";
-import { ILimitOrder, ILimitOrderModel, IWatchPair, IWatchPairModel, Side } from "../models/models";
+import { ILimitOrder, ILimitOrderModel, IWatchPair, IWatchPairModel } from "../models/models";
 import { getLimitOrderPairs } from "../utils/watchPairs";
+import { BigNumber } from "@ethersproject/bignumber";
 
 export class Database {
 
@@ -82,12 +83,8 @@ export class Database {
     });
   }
 
-  public async getLimitOrders(side: Side, price: string, pairAddress: string): Promise<ILimitOrder[]> {
-    if (side === Side.Buy) {
-      return this.LimitOrderModel.find({ pairAddress, price: { $gt: price } }).exec();
-    } else {
-      return this.LimitOrderModel.find({ pairAddress, price: { $lt: price } }).exec();
-    }
+  public async getLimitOrders(price: BigNumber, pairAddress: string, tokenIn: string): Promise<ILimitOrder[]> {
+    return this.LimitOrderModel.find({ pairAddress, 'order.tokenIn': tokenIn, price: { $gt: price.toString() } }).exec();
   }
 
   public async updateLimitOrders(orders: ILimitOrder[]): Promise<UpdateWriteOpResult[]> {

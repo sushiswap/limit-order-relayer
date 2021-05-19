@@ -45,7 +45,6 @@ export const limitOrderModel = new Schema({
     s: String,
     chainId: Number
   },
-  side: Number,
   pairAddress: String,
   filledAmount: String
 });
