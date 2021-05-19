@@ -53,7 +53,7 @@ export function watchLimitOrders(watchPairs: IWatchPair[]): Observable<ILimitOrd
 
     if (!validLimitOrderData(order)) return;
 
-    const digest = LimitOrder.getLimitOrder(order).getDigest();
+    const digest = LimitOrder.getLimitOrder(order).getTypeHash(order.chainId);
 
     const price = BigNumber.from(order.amountOut).mul(PRICE_MULTIPLIER).div(BigNumber.from(order.amountIn)).toString();
 
