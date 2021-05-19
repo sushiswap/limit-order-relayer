@@ -1,6 +1,7 @@
-import { ILimitOrderData } from "limitorderv2-sdk";
+import { ILimitOrderData, LimitOrder } from "limitorderv2-sdk";
 import { Database } from "../database/database";
 import { ILimitOrder } from "../models/models";
+import { utils } from 'ethers';
 
 // This is called just before we try to execute orders
 // Check if the order is (still) valid
@@ -33,8 +34,41 @@ export async function validOrders(orders: ILimitOrder[]): Promise<ILimitOrder[]>
 }
 
 // This is called after we receive the order from the user
-// validate amounts are > 0, check the signature
+/*
+  Checks: Validate Signature, Validate Amounts, Validate Expiry
+*/
 export function validLimitOrderData(order: ILimitOrderData): boolean {
-  // TODO
+  let limitOrder = LimitOrder.getLimitOrder(order);
+  let isOrderValid = checkSignature(limitOrder) || checkAmounts(limitOrder) || checkExpiry(limitOrder);
+  return isOrderValid;
+}
+
+function checkSignature(limitOrder: LimitOrder): boolean {
+  let typedData = limitOrder.getTypedData(limitOrder.chainId);
+  
+  let v = limitOrder.v;
+  let r = limitOrder.r;
+  let s = limitOrder.s;
+
+  let recoveredAddress = utils.verifyTypedData(
+    typedData.domain,
+    {
+      LimitOrder: typedData.types.LimitOrder
+    },
+    typedData.message,
+    { v , r, s }
+  )
+
+  if(recoveredAddress != limitOrder.maker) return false;
+  return true;
+}
+
+function checkAmounts(limitOrder: LimitOrder): boolean {
+  if(Number(limitOrder.amountInRaw) <= 0 && Number(limitOrder.amountOutRaw) <= 0) return false;
+  return true;
+}
+
+function checkExpiry(limitOrder: LimitOrder): boolean {
+  if(Number(limitOrder.endTime) < Math.floor(Date.now() / 1000)) return false;
   return true;
 }
