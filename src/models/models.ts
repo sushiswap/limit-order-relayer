@@ -22,7 +22,6 @@ export interface ILimitOrder {
   digest: string,
   order: ILimitOrderData,
   pairAddress?: string,
-  filledAmount: string,
 }
 
 export interface ILimitOrderModel extends ILimitOrder, Document { };

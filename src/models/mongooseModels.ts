@@ -46,7 +46,6 @@ export const limitOrderModel = new Schema({
     chainId: Number
   },
   pairAddress: String,
-  filledAmount: String
 });
 
 watchPairModel.set("collection", "watchpairs");

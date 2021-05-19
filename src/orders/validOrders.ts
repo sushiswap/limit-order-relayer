@@ -11,24 +11,18 @@ export async function validOrders(orders: ILimitOrder[]): Promise<ILimitOrder[]>
   const database = Database.Instance;
 
   const filledOrders = [];
-  const partiallyFilledOrders = [];
   const validOrders = [];
 
   orders.forEach(order => {
     // TODO
-
-    // simulate the transaction
-
-    // get order status:
+    // get order status...
     // check if the user has enough balance
-    // filledOrders.push()
-    // partiallyFilledOrders.push()
+    // check if the order isn't expired
+    // check if the order isn't already filled
     // check that we have not already executed the order
-    // validOrders.push()
   });
 
-  await database.updateLimitOrders(filledOrders); // order has been partially filled
-  await database.deleteLimitOrders(partiallyFilledOrders); // order filled or expired
+  await database.deleteLimitOrders(filledOrders); // delete the order only if it is expired / filled
 
   return validOrders;
 }

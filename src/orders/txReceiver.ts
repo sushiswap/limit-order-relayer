@@ -57,7 +57,7 @@ export function watchLimitOrders(watchPairs: IWatchPair[]): Observable<ILimitOrd
 
     const price = BigNumber.from(order.amountOut).mul(PRICE_MULTIPLIER).div(BigNumber.from(order.amountIn)).toString();
 
-    updates.next({ price, digest, order, filledAmount: "0" });
+    updates.next({ price, digest, order });
 
   });
 

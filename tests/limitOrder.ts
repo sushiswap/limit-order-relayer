@@ -34,8 +34,7 @@ function mockLimitOrderWatcher(): Observable<ILimitOrder> {
       s: "",
       chainId: 1
     },
-    pairAddress: "0x",
-    filledAmount: "0",
+    pairAddress: "0x"
   });
 }
 
