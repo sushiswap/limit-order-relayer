@@ -7,9 +7,7 @@ import stopLimitOrderABI from '../abis/stopLimitOrder';
 // This is called just before we try to execute orders
 // Check if the order is (still) valid
 // & update the order status in the database ** (move this to another function potentially)
-export async function validOrders(orders: ILimitOrder[]): Promise<ILimitOrder[]> {
-
-  const database = Database.Instance;
+export async function validOrders(orders: ILimitOrder[], database): Promise<ILimitOrder[]> {
 
   const filledOrders = [];
   const validOrders = [];

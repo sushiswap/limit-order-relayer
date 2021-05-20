@@ -20,7 +20,7 @@ export class Database {
   protected constructor() { };
 
   public async connectDB(): Promise<void> {
-
+    console.log('why here')
     return new Promise((resolve, reject) => {
 
       const uri = process.env.MONGODB_URL;
@@ -52,7 +52,7 @@ export class Database {
     return this.saveWatchPairs(await getLimitOrderPairs());
   }
 
-  private async dropPairs() {
+  protected async dropPairs() {
     await this.WatchPairModel.deleteMany({});
   }
 

@@ -4,7 +4,6 @@ import { Observable, Subject } from 'rxjs';
 import { IMessageEvent, w3cwebsocket } from 'websocket';
 import { IWatchPair, ILimitOrder } from '../models/models';
 import { PRICE_MULTIPLIER } from '../price-updates/pair-updates';
-import { isLessThan } from '../utils/orderTokens';
 import { validLimitOrderData } from './validOrders';
 
 const socketUrl = 'wss://w4s58dcj10.execute-api.us-east-1.amazonaws.com/dev';
