@@ -3,6 +3,7 @@ import { Database } from "../database/database";
 import { ILimitOrder } from "../models/models";
 import { utils, Contract, providers } from 'ethers';
 import stopLimitOrderABI from '../abis/stopLimitOrder';
+import bentoBoxABI from '../abis/bentoBox'
 
 // This is called just before we try to execute orders
 // Check if the order is (still) valid
@@ -16,6 +17,7 @@ export async function validOrders(orders: ILimitOrder[], database): Promise<ILim
 
   // Add this to your env later
   let stopLimitOrderContract = new Contract("0xce9365dB1C99897f04B3923C03ba9a5f80E8DB87", stopLimitOrderABI, provider);
+  let bentoBoxContract = new Contract("0xF5BCE5077908a1b7370B9ae04AdC565EBd643966", bentoBoxABI, provider);
 
   await Promise.all(orders.map(async (order) => {
 
@@ -25,8 +27,14 @@ export async function validOrders(orders: ILimitOrder[], database): Promise<ILim
       await isCanceled(limitOrder, stopLimitOrderContract) ||
       isExpired(limitOrder);
 
-    if (!invalid) validOrders.push(order);
-    else filledOrders.push(order);
+    if (!invalid) {
+      if(await hasEnoughBalance(limitOrder, bentoBoxContract)){
+        validOrders.push(order);
+      }
+    }
+    else {
+      filledOrders.push(order);
+    }
 
     // get order status...
     // check if the user has enough balance
@@ -38,6 +46,11 @@ export async function validOrders(orders: ILimitOrder[], database): Promise<ILim
   await database.deleteLimitOrders(filledOrders); // delete the order only if it is expired / filled
 
   return validOrders;
+}
+
+export async function hasEnoughBalance(limitOrder: LimitOrder, bentoBoxContract: Contract): Promise<boolean> {
+  const balance = await bentoBoxContract.balanceOf(limitOrder.tokenInAddress, limitOrder.maker);
+  return Number(balance) >= Number(limitOrder.amountOutRaw);
 }
 
 export async function isFilled(limitOrder: LimitOrder, stopLimitOrderContract: Contract): Promise<boolean> {
