@@ -74,7 +74,6 @@ export class LimitOrderRelayer {
 
   private execute(orders: ILimitOrder[]) {
     if (orders.length > 0) {
-      console.log(orders);
       this.executeOrders(orders);
       this._executeOrders.next(orders);
     }
