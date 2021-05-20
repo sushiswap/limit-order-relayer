@@ -40,18 +40,18 @@ export async function validOrders(orders: ILimitOrder[], database): Promise<ILim
   return validOrders;
 }
 
-async function isFilled(limitOrder: LimitOrder, stopLimitOrderContract: Contract): Promise<boolean> {
+export async function isFilled(limitOrder: LimitOrder, stopLimitOrderContract: Contract): Promise<boolean> {
   const digest = limitOrder.getTypeHash();
   const orderStatus = await stopLimitOrderContract.orderStatus(digest);
   return (orderStatus.toString() === limitOrder.amountOutRaw);
 }
 
-async function isCanceled(limitOrder: LimitOrder, stopLimitOrderContract: Contract): Promise<boolean> {
+export async function isCanceled(limitOrder: LimitOrder, stopLimitOrderContract: Contract): Promise<boolean> {
   const digest = limitOrder.getTypeHash();
   return !(await stopLimitOrderContract.cancelledOrder(limitOrder.maker, digest));
 }
 
-function isExpired(limitOrder: LimitOrder): boolean {
+export function isExpired(limitOrder: LimitOrder): boolean {
   return (Number(limitOrder.endTime) < Math.floor(Date.now() / 1000));
 }
 

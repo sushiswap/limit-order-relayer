@@ -8,6 +8,7 @@ import { executeOrders } from '../src/orders/execute';
 import { Database } from '../src/database/database';
 import { expect } from 'chai';
 import { validOrders } from '../src/orders/validOrders';
+import { profitableOrders } from '../src/orders/profitability';
 
 describe('LimitOrderTest', () => {
   it('Executing Limit Order', async () => {
@@ -20,10 +21,13 @@ describe('LimitOrderTest', () => {
 
     expect(orders[0]).to.equal(mockLimitOrder, "order was not fetched from DB");
 
-    orders = await validOrders(orders, limitOrder.database);
+    // orders = await validOrders(orders, limitOrder.database);
 
-    expect(orders[0]).to.equal(mockLimitOrder, "order was filtered out");
+    // expect(orders[0]).to.equal(mockLimitOrder, "order was filtered out");
 
+    orders = await profitableOrders(mockPriceUpdate, orders);
+
+    expect(orders[0]).to.equal(mockLimitOrder, "order wasn't executed");
 
     /*     let success = false;
     
