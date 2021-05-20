@@ -17,11 +17,15 @@ export async function validOrders(orders: ILimitOrder[], database): Promise<ILim
   // Add this to your env later
   let stopLimitOrderContract = new Contract("0xce9365dB1C99897f04B3923C03ba9a5f80E8DB87", stopLimitOrderABI, provider);
 
-  orders.forEach(async (order) => {
-    // TODO
-    let limitOrder = LimitOrder.getLimitOrder(order.order)
-    let isValidOrder = await (isOrderFilled(limitOrder, stopLimitOrderContract) || isOrderCancel(limitOrder, stopLimitOrderContract) || checkExpiry(limitOrder));
-    if(isValidOrder) validOrders.push(order);
+  await Promise.all(orders.map(async (order) => {
+
+    const limitOrder = LimitOrder.getLimitOrder(order.order);
+
+    const invalid = await isFilled(limitOrder, stopLimitOrderContract) ||
+      await isCanceled(limitOrder, stopLimitOrderContract) ||
+      isExpired(limitOrder);
+
+    if (!invalid) validOrders.push(order);
     else filledOrders.push(order);
 
     // get order status...
@@ -29,27 +33,27 @@ export async function validOrders(orders: ILimitOrder[], database): Promise<ILim
     // check if the order isn't expired
     // check if the order isn't already filled
     // check that we have not already executed the order
-  });
+  }));
 
   await database.deleteLimitOrders(filledOrders); // delete the order only if it is expired / filled
 
   return validOrders;
 }
 
-async function isOrderFilled(limitOrder: LimitOrder, stopLimitOrderContract: Contract): Promise<boolean> {
-  let digest = limitOrder.getTypeHash();
-  let orderStatus = await stopLimitOrderContract.cancelledOrder(limitOrder.maker, digest);
-  if(orderStatus) return false;
-  return true;
+async function isFilled(limitOrder: LimitOrder, stopLimitOrderContract: Contract): Promise<boolean> {
+  const digest = limitOrder.getTypeHash();
+  const orderStatus = await stopLimitOrderContract.orderStatus(digest);
+  return (orderStatus.toString() === limitOrder.amountOutRaw);
 }
 
-async function isOrderCancel(limitOrder: LimitOrder, stopLimitOrderContract: Contract): Promise<boolean> {
-  let digest = limitOrder.getTypeHash();
-  let orderStatus = await stopLimitOrderContract.orderStatus(digest);
-  if(Number(orderStatus) == Number(limitOrder.amountOutRaw)) return false;
-  return true;
+async function isCanceled(limitOrder: LimitOrder, stopLimitOrderContract: Contract): Promise<boolean> {
+  const digest = limitOrder.getTypeHash();
+  return !(await stopLimitOrderContract.cancelledOrder(limitOrder.maker, digest));
 }
 
+function isExpired(limitOrder: LimitOrder): boolean {
+  return (Number(limitOrder.endTime) < Math.floor(Date.now() / 1000));
+}
 
 // This is called after we receive the order from the user
 /*
@@ -57,7 +61,7 @@ async function isOrderCancel(limitOrder: LimitOrder, stopLimitOrderContract: Con
 */
 export function validLimitOrderData(order: ILimitOrderData): boolean {
   let limitOrder = LimitOrder.getLimitOrder(order);
-  let isOrderValid = checkSignature(limitOrder) || checkAmounts(limitOrder) || checkExpiry(limitOrder);
+  let isOrderValid = checkSignature(limitOrder) || checkAmounts(limitOrder) || !isExpired(limitOrder);
   return isOrderValid;
 }
 
@@ -83,10 +87,5 @@ function checkSignature(limitOrder: LimitOrder): boolean {
 
 function checkAmounts(limitOrder: LimitOrder): boolean {
   if(Number(limitOrder.amountInRaw) <= 0 && Number(limitOrder.amountOutRaw) <= 0) return false;
-  return true;
-}
-
-function checkExpiry(limitOrder: LimitOrder): boolean {
-  if(Number(limitOrder.endTime) < Math.floor(Date.now() / 1000)) return false;
   return true;
 }
