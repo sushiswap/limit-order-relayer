@@ -39,14 +39,14 @@ export async function validOrders(orders: ILimitOrder[]): Promise<ILimitOrder[]>
 }
 
 async function isOrderFilled(limitOrder: LimitOrder, stopLimitOrderContract: Contract): Promise<boolean> {
-  let digest = limitOrder.getTypeHash(limitOrder.chainId);
+  let digest = limitOrder.getTypeHash();
   let orderStatus = await stopLimitOrderContract.cancelledOrder(limitOrder.maker, digest);
   if(orderStatus) return false;
   return true;
 }
 
 async function isOrderCancel(limitOrder: LimitOrder, stopLimitOrderContract: Contract): Promise<boolean> {
-  let digest = limitOrder.getTypeHash(limitOrder.chainId);
+  let digest = limitOrder.getTypeHash();
   let orderStatus = await stopLimitOrderContract.orderStatus(digest);
   if(Number(orderStatus) == Number(limitOrder.amountOutRaw)) return false;
   return true;
@@ -64,7 +64,7 @@ export function validLimitOrderData(order: ILimitOrderData): boolean {
 }
 
 function checkSignature(limitOrder: LimitOrder): boolean {
-  let typedData = limitOrder.getTypedData(limitOrder.chainId);
+  let typedData = limitOrder.getTypedData();
   
   let v = limitOrder.v;
   let r = limitOrder.r;
