@@ -67,7 +67,7 @@ describe('Profitability', () => {
     const currentPrice = token1Amount.mul(PRICE_MULTIPLIER).div(token0Amount);
     const limitPrice = token1Amount.mul(PRICE_MULTIPLIER).div(token0Amount.add(_inAmount)); // limit price would be exceeded if the whole amountIn would sell
 
-    const { inAmount, outAmount, newToken0Amount, newToken1Amount } = maxMarketSell(limitPrice, currentPrice, sellingToken0, _inAmount, token0Amount, token1Amount);
+    const { inAmount, outAmount, newToken0Amount, newToken1Amount } = maxMarketSell(limitPrice, currentPrice, sellingToken0, _inAmount, "0", token0Amount, token1Amount);
 
     expect(inAmount.lt(_inAmount)).to.equal(true, "inAmount wasn't decreased");
     expect(inAmount.toString()).to.equal("4999878428512704256313", "inAmount wasn't calculated correctly");
@@ -83,7 +83,7 @@ describe('Profitability', () => {
     const currentPrice = token0Amount.mul(PRICE_MULTIPLIER).div(token1Amount);
     const limitPrice = token0Amount.mul(PRICE_MULTIPLIER).div(token1Amount.add(_inAmount.mul(4)));
 
-    const { inAmount, outAmount, newToken0Amount, newToken1Amount } = maxMarketSell(limitPrice, currentPrice, sellingToken0, _inAmount, token0Amount, token1Amount);
+    const { inAmount, outAmount, newToken0Amount, newToken1Amount } = maxMarketSell(limitPrice, currentPrice, sellingToken0, _inAmount, "0", token0Amount, token1Amount);
 
     expect(newToken0Amount.mul(PRICE_MULTIPLIER).div(newToken1Amount).gt(limitPrice)).to.be.true;
     expect(inAmount.eq(_inAmount)).to.equal(true, "inAmount was decreased by mistake");
@@ -103,11 +103,36 @@ describe('Profitability', () => {
       currentPrice,
       false,
       amountIn,
+      "0",
       BigNumber.from("102817581502091247236234371"),
       BigNumber.from("50212189021597534681275"),
     );
     expect(newToken0Amount.mul(PRICE_MULTIPLIER).div(newToken1Amount).gt(orderPrice)).to.be.true;
     expect(outAmount.mul(PRICE_MULTIPLIER).div(inAmount).gt(limitPrice)).to.be.true;
+  });
+
+  it('Should calculate largest amountIn possible for market selling [3]', () => {
+
+    const sellingToken0 = false; // selling weth for dai
+    const token0Amount = daiBalance;
+    const token1Amount = wethBalance;
+    const _inAmount = BigNumber.from("10000000000000000000"); // 10
+    const currentPrice = token0Amount.mul(PRICE_MULTIPLIER).div(token1Amount);
+    const limitPrice = token0Amount.mul(PRICE_MULTIPLIER).div(token1Amount.add(_inAmount.mul(100)));
+
+    const { inAmount, outAmount, newToken0Amount, newToken1Amount }: { [key: string]: BigNumber } = maxMarketSell(
+      limitPrice,
+      currentPrice,
+      sellingToken0,
+      _inAmount,
+      _inAmount.div(2).toString(),
+      token0Amount,
+      token1Amount);
+
+    expect(outAmount.gte(inAmount.mul(limitPrice).div(PRICE_MULTIPLIER))).to.be.eq(true, "out amount was not calculated correctly");
+    expect(newToken0Amount.mul(PRICE_MULTIPLIER).div(newToken1Amount).gt(limitPrice)).to.be.true;
+    expect(inAmount.eq(_inAmount.div(2))).to.be.eq(true, "inAmount was not calculated correctly");
+
   });
 
   it('Should caclulate the state after limit order execution [0]', () => {

@@ -115,6 +115,7 @@ export function getOrderEffects(orderData: ILimitOrder, sellingToken0: boolean, 
     sellingToken0 ? priceUpdate.token0.price : priceUpdate.token1.price,
     sellingToken0,
     _inAmount,
+    orderData.filledAmount,
     priceUpdate.token0.poolBalance,
     priceUpdate.token1.poolBalance
   );
@@ -148,9 +149,18 @@ export function getOrderEffects(orderData: ILimitOrder, sellingToken0: boolean, 
  * @param token1Amount balance of token1 in pool
  * @returns amountIn that we can sell so that limitPrice is not surpassed (due to price slippage), amountOut, newPrice, newToken0Balance, newToken1Balance
  */
-export function maxMarketSell(limitPrice: BigNumber, currentPrice: BigNumber, sellingToken0: boolean, inAmount: BigNumber, token0Amount: BigNumber, token1Amount: BigNumber) {
+export function maxMarketSell(
+  limitPrice: BigNumber,
+  currentPrice: BigNumber,
+  sellingToken0: boolean,
+  inAmount: BigNumber,
+  filledAmount: string,
+  token0Amount: BigNumber,
+  token1Amount: BigNumber) {
 
   if (currentPrice.lt(limitPrice)) return { inAmount: BigNumber.from("0") } as any;
+
+  inAmount = inAmount.sub(filledAmount);
 
   const marketSell = marketSellOutput(sellingToken0, inAmount, token0Amount, token1Amount);
 
@@ -169,7 +179,6 @@ export function maxMarketSell(limitPrice: BigNumber, currentPrice: BigNumber, se
     const x = sellingToken0 ? token0Amount : token1Amount;
     const y = sellingToken0 ? token1Amount : token0Amount;
     inAmount = y.sub(x.mul(limitPrice).div(PRICE_MULTIPLIER)).mul(PRICE_MULTIPLIER).div(executionPrice.add(limitPrice));
-    const { outAmount, newPrice, newToken0Amount, newToken1Amount } = marketSellOutput(sellingToken0, inAmount, token0Amount, token1Amount);
     return { inAmount, ...marketSellOutput(sellingToken0, inAmount, token0Amount, token1Amount) };
 
   } else {
