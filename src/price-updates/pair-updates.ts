@@ -15,7 +15,7 @@ export interface PriceUpdate {
   token0: {
     poolBalance: BigNumber,
     price: BigNumber, // price is calculated as (token1Balance * {PRICE_MULTIPLIER}) / token0Balance
-    address: string
+    address: string   // e.g. token0 is DAI, token1 is WETH ... token0.price is ~ 0.00033
   },
   token1: {
     poolBalance: BigNumber,

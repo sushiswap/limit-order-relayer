@@ -63,8 +63,8 @@ export class LimitOrderRelayer {
       const token1Orders = await profitableOrders(priceUpdate, _token1Orders);
 
 
-      this.execute(token0Orders);
-      this.execute(token1Orders);
+      // this.execute(token0Orders);
+      // this.execute(token1Orders);
 
 
     });

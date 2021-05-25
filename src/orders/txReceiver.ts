@@ -1,9 +1,11 @@
 import { BigNumber } from '@ethersproject/bignumber';
 import { ILimitOrderData, LimitOrder } from 'limitorderv2-sdk';
 import { Observable, Subject } from 'rxjs';
+import { filter, map } from 'rxjs/operators';
 import { IMessageEvent, w3cwebsocket } from 'websocket';
 import { IWatchPair, ILimitOrder } from '../models/models';
 import { PRICE_MULTIPLIER } from '../price-updates/pair-updates';
+import { getOrderPrice } from '../utils/price';
 import { validLimitOrderData } from './validOrders';
 
 const socketUrl = 'wss://w4s58dcj10.execute-api.us-east-1.amazonaws.com/dev';
@@ -42,26 +44,37 @@ const heartbeat = async () => {
 }
 
 // receive orders from the websocket
-export function watchLimitOrders(watchPairs: IWatchPair[]): Observable<ILimitOrder> {
+function _watchLimitOrders(watchPairs: IWatchPair[]): Observable<ILimitOrderData> {
 
-  const updates = new Subject<ILimitOrder>();
+  const updates = new Subject<ILimitOrderData>();
 
   socket = startSocket(socketUrl, ({ data }: any) => {
 
     const order: ILimitOrderData = JSON.parse(data).limitOrder;
 
-    if (!validLimitOrderData(order)) return;
-
-    const digest = LimitOrder.getLimitOrder(order).getTypeHash();
-
-    const price = BigNumber.from(order.amountOut).mul(PRICE_MULTIPLIER).div(BigNumber.from(order.amountIn)).toString();
-
-    updates.next({ price, digest, order });
+    updates.next(order);
 
   });
 
   return updates;
 
+}
+
+// parametize for easier testing
+export function watchLimitOrders(watchPairs: IWatchPair[], sub = _watchLimitOrders): Observable<ILimitOrder> {
+  return sub(watchPairs).pipe(
+
+    filter(validLimitOrderData),
+
+    map((order: ILimitOrderData) => {
+
+      const digest = LimitOrder.getLimitOrder(order).getTypeHash();
+
+      const price = getOrderPrice(BigNumber.from(order.amountIn), BigNumber.from(order.amountOut)).toString();
+
+      return { price, digest, order };
+
+    }))
 }
 
 export function stopReceivingOrders() { socket.close() };
