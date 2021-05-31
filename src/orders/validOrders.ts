@@ -1,8 +1,9 @@
 import { ILimitOrderData, LimitOrder } from "limitorderv2-sdk";
 import { Database } from "../database/database";
-import { ILimitOrder } from "../models/models";
-import { utils, Contract, providers } from 'ethers';
+import { ILimitOrder, IWatchPair } from "../models/models";
+import { utils, Contract, providers, BigNumber } from 'ethers';
 import stopLimitOrderABI from '../abis/stopLimitOrder';
+import { useWss } from "../price-updates/pair-updates";
 
 // This is called just before we try to execute orders
 // Check if the order is (still) valid
@@ -12,7 +13,9 @@ export async function validOrders(orders: ILimitOrder[], database): Promise<ILim
   const filledOrders = [];
   const validOrders = [];
 
-  const provider = new providers.WebSocketProvider(process.env.MAINNET_WEBSOCKET_JSON_RPC);
+  const provider = useWss() ?
+    new providers.WebSocketProvider(process.env.WEBSOCKET_JSON_RPC) :
+    new providers.JsonRpcProvider(process.env.HTTP_JSON_RPC);
 
   // Add this to your env later
   let stopLimitOrderContract = new Contract("0xce9365dB1C99897f04B3923C03ba9a5f80E8DB87", stopLimitOrderABI, provider);
@@ -56,13 +59,26 @@ export function isExpired(limitOrder: LimitOrder): boolean {
 }
 
 // This is called after we receive the order from the user
+// todo don't store orders that aren't present in the watch pairs array
 /*
   Checks: Validate Signature, Validate Amounts, Validate Expiry
 */
-export function validLimitOrderData(order: ILimitOrderData): boolean {
-  let limitOrder = LimitOrder.getLimitOrder(order);
-  let isOrderValid = checkSignature(limitOrder) || checkAmounts(limitOrder) || !isExpired(limitOrder);
-  return isOrderValid;
+export function validLimitOrderData(order: ILimitOrderData, watchPairs: IWatchPair[]): boolean {
+
+  let limitOrder;
+
+  try {
+    limitOrder = LimitOrder.getLimitOrder(order);
+  } catch (error) {
+    console.error("Could not parse order ", error);
+    return false;
+  }
+
+  const correctChain = order.chainId === +process.env.CHAINID;
+  const validSig = checkSignature(limitOrder);
+  const notExpired = !isExpired(limitOrder);
+
+  return correctChain && validSig && notExpired;
 }
 
 function checkSignature(limitOrder: LimitOrder): boolean {
@@ -74,18 +90,11 @@ function checkSignature(limitOrder: LimitOrder): boolean {
 
   let recoveredAddress = utils.verifyTypedData(
     typedData.domain,
-    {
-      LimitOrder: typedData.types.LimitOrder
-    },
+    { LimitOrder: typedData.types.LimitOrder },
     typedData.message,
     { v , r, s }
   )
 
   if(recoveredAddress != limitOrder.maker) return false;
-  return true;
-}
-
-function checkAmounts(limitOrder: LimitOrder): boolean {
-  if(Number(limitOrder.amountInRaw) <= 0 && Number(limitOrder.amountOutRaw) <= 0) return false;
   return true;
 }

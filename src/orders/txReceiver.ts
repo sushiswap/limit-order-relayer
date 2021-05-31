@@ -64,7 +64,7 @@ function _watchLimitOrders(watchPairs: IWatchPair[]): Observable<ILimitOrderData
 export function watchLimitOrders(watchPairs: IWatchPair[], sub = _watchLimitOrders): Observable<ILimitOrder> {
   return sub(watchPairs).pipe(
 
-    filter(validLimitOrderData),
+    filter(order => validLimitOrderData(order, watchPairs)),
 
     map((order: ILimitOrderData) => {
 
@@ -74,7 +74,7 @@ export function watchLimitOrders(watchPairs: IWatchPair[], sub = _watchLimitOrde
 
       return { price, digest, order };
 
-    }))
+    }));
 }
 
 export function stopReceivingOrders() { socket.close() };
