@@ -85,7 +85,7 @@ export class Database {
   }
 
   public async getLimitOrders(price: BigNumber, pairAddress: string, tokenIn: string): Promise<ILimitOrder[]> {
-    return this.LimitOrderModel.find({ pairAddress, 'order.tokenIn': tokenIn, price: { $gt: price.toString() } }).exec();
+    return this.LimitOrderModel.find({ pairAddress, 'order.tokenIn': tokenIn, price: { $lt: price.toString() } }).exec();
   }
 
   public async updateLimitOrders(orders: ILimitOrder[]): Promise<UpdateWriteOpResult[]> {

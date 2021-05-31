@@ -4,7 +4,6 @@ import { Observable, Subject } from 'rxjs';
 import { filter, map } from 'rxjs/operators';
 import { IMessageEvent, w3cwebsocket } from 'websocket';
 import { IWatchPair, ILimitOrder } from '../models/models';
-import { PRICE_MULTIPLIER } from '../price-updates/pair-updates';
 import { getOrderPrice } from '../utils/price';
 import { validLimitOrderData } from './validOrders';
 

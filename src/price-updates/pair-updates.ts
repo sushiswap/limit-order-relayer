@@ -31,60 +31,45 @@ export function watchSushiwapPairs(watchPairs: IWatchPair[]): Observable<PriceUp
   // emit a PriceUpdate event after every swap for a given watch pair
   const updates = new Subject<PriceUpdate>();
 
+
+  const fetchPairData = async (pair: IWatchPair) => {
+
+    const { token0Balance, token1Balance } = await getPairBalances(pair).catch();
+
+    if (!token0Balance || !token1Balance) return;
+
+    const token0 = {
+      price: (token1Balance.mul(PRICE_MULTIPLIER)).div(token0Balance),
+      poolBalance: token0Balance,
+      address: pair.token0.address
+    };
+
+    const token1 = {
+      price: (token0Balance.mul(PRICE_MULTIPLIER)).div(token1Balance),
+      poolBalance: token1Balance,
+      address: pair.token1.address
+    };
+
+    updates.next({ pair, token0, token1 });
+  }
+
+
   watchPairs.forEach(pair => {
 
-    if (useWss()) {
+    fetchPairData(pair); // do it once at the beginning
+
+    if (useWss()) { // Polygon has bad ws support rn
 
       const filter = {
         address: pair.pairAddress,
         topics: [ethers.utils.id("Swap(address,uint256,uint256,uint256,uint256,address)")]
       };
 
-      provider.on(filter, async () => {
-
-        const { token0Balance, token1Balance } = await getPairBalances(pair).catch();
-
-        if (!token0Balance || !token1Balance) return;
-
-        const token0 = {
-          price: (token1Balance.mul(PRICE_MULTIPLIER)).div(token0Balance),
-          poolBalance: token0Balance,
-          address: pair.token0.address
-        };
-
-        const token1 = {
-          price: (token0Balance.mul(PRICE_MULTIPLIER)).div(token1Balance),
-          poolBalance: token1Balance,
-          address: pair.token1.address
-        };
-
-        updates.next({ pair, token0, token1 });
-
-      });
+      provider.on(filter, async () => fetchPairData(pair));
 
     } else {
 
-      setInterval(async () => {
-
-        const { token0Balance, token1Balance } = await getPairBalances(pair).catch();
-
-        if (!token0Balance || !token1Balance) return;
-
-        const token0 = {
-          price: (token1Balance.mul(PRICE_MULTIPLIER)).div(token0Balance),
-          poolBalance: token0Balance,
-          address: pair.token0.address
-        };
-
-        const token1 = {
-          price: (token0Balance.mul(PRICE_MULTIPLIER)).div(token1Balance),
-          poolBalance: token1Balance,
-          address: pair.token1.address
-        };
-
-        updates.next({ pair, token0, token1 });
-
-      }, 10000);
+      setInterval(() => fetchPairData(pair), 60000);
 
     }
 
