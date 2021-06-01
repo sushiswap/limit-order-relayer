@@ -1,4 +1,4 @@
-import { _limitOrderPairs } from '../config/pairs';
+import { _limitOrderPairs } from '../limitOrderConfig/pairs';
 import { IWatchPair } from '../models/models';
 import DEFAULT_TOKEN_LIST from '@sushiswap/default-token-list';
 
