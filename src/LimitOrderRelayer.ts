@@ -54,20 +54,20 @@ export class LimitOrderRelayer {
       // one of the two arrays should generally be empty
       const __token0Orders = await this.database.getLimitOrders(priceUpdate.token0.price, priceUpdate.pair.pairAddress, priceUpdate.token0.address);
       const __token1Orders = await this.database.getLimitOrders(priceUpdate.token1.price, priceUpdate.pair.pairAddress, priceUpdate.token1.address);
-      console.log(__token0Orders);
-      console.log(__token1Orders);
+      if (__token0Orders.length > 0) console.log('found order');
+      if (__token1Orders.length > 0) console.log('found order');
 
       // filter out expired / already filled orders
       const _token0Orders = await validOrders(__token0Orders, this.database);
       const _token1Orders = await validOrders(__token1Orders, this.database);
-      console.log(_token0Orders);
-      console.log(_token1Orders);
+      if (_token0Orders.length > 0) console.log('found valid order');
+      if (_token1Orders.length > 0) console.log('found valid order');
 
       // filter out orders that aren't profitable
       const token0Orders = await profitableOrders(priceUpdate, _token0Orders);
       const token1Orders = await profitableOrders(priceUpdate, _token1Orders);
-      console.log(_token0Orders);
-      console.log(_token1Orders);
+      if (token0Orders.length > 0) console.log('found profitable order');
+      if (token1Orders.length > 0) console.log('found profitable order');
 
       // this.execute(token0Orders);
       // this.execute(token1Orders);

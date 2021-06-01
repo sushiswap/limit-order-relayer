@@ -4,13 +4,14 @@ import { ILimitOrder, IWatchPair } from "../models/models";
 import { utils, Contract, providers, BigNumber } from 'ethers';
 import stopLimitOrderABI from '../abis/stopLimitOrder';
 import { useWss } from "../price-updates/pair-updates";
+import { isExportAssignment } from "typescript";
 
 // This is called just before we try to execute orders
 // Check if the order is (still) valid
 // & update the order status in the database ** (move this to another function potentially)
 export async function validOrders(orders: ILimitOrder[], database): Promise<ILimitOrder[]> {
 
-  const filledOrders = [];
+  const invalidOrders = [];
   const validOrders = [];
 
   const provider = useWss() ?
@@ -20,39 +21,42 @@ export async function validOrders(orders: ILimitOrder[], database): Promise<ILim
   // Add this to your env later
   let stopLimitOrderContract = new Contract(getVerifyingContract(+process.env.CHAINID), stopLimitOrderABI, provider);
 
+
   await Promise.all(orders.map(async (order) => {
+
+    console.log(order);
 
     const limitOrder = LimitOrder.getLimitOrder(order.order);
 
-    const invalid = await isFilled(limitOrder, stopLimitOrderContract) ||
-      await isCanceled(limitOrder, stopLimitOrderContract) ||
-      isExpired(limitOrder);
+    const filled = await isFilled(limitOrder, stopLimitOrderContract);
+    const canceled = await isCanceled(limitOrder, stopLimitOrderContract);
+    const expired = isExpired(limitOrder);
 
-    if (!invalid) validOrders.push(order);
-    else filledOrders.push(order);
+    if (filled || canceled || expired) {
+      invalidOrders.push(order);
+    } else {
+      validOrders.push(order);
+    }
 
-    // get order status...
-    // check if the user has enough balance
-    // check if the order isn't expired
-    // check if the order isn't already filled
-    // check that we have not already executed the order
   }));
 
   // todo retink deletion.. There should probably be a seperate service for this
-  // await database.deleteLimitOrders(filledOrders); // delete the order only if it is expired / filled
+  // await database.deleteLimitOrders(invalidOrders); // delete the order only if it is expired / filled
 
   return validOrders;
 }
 
 export async function isFilled(limitOrder: LimitOrder, stopLimitOrderContract: Contract): Promise<boolean> {
-  const digest = limitOrder.getTypeHash();
-  const orderStatus = await stopLimitOrderContract.orderStatus(digest);
+
+  const orderStatus = await stopLimitOrderContract.orderStatus(limitOrder.getTypeHash());
   return (orderStatus.toString() === limitOrder.amountOutRaw);
+
 }
 
 export async function isCanceled(limitOrder: LimitOrder, stopLimitOrderContract: Contract): Promise<boolean> {
-  const digest = limitOrder.getTypeHash();
-  return !(await stopLimitOrderContract.cancelledOrder(limitOrder.maker, digest));
+
+  return stopLimitOrderContract.cancelledOrder(limitOrder.maker, limitOrder.getTypeHash());
+
 }
 
 export function isExpired(limitOrder: LimitOrder): boolean {
