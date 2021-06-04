@@ -10,7 +10,7 @@ const provider = useWss() ?
   new ethers.providers.WebSocketProvider(process.env.WEBSOCKET_JSON_RPC) :
   new ethers.providers.JsonRpcProvider(process.env.HTTP_JSON_RPC);
 
-export const PRICE_MULTIPLIER = BigNumber.from(1e18.toString());
+export const PRICE_MULTIPLIER = BigNumber.from(1e10.toString());
 
 export interface PriceUpdate {
   pair: IWatchPair,

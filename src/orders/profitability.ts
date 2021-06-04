@@ -3,6 +3,17 @@ import { ILimitOrder } from "../models/models";
 import { PriceUpdate, PRICE_MULTIPLIER } from "../price-updates/pair-updates";
 import axios from 'axios';
 import { getMinRate } from "../utils/price";
+import { ChainId } from "@sushiswap/sdk";
+import dotenv from 'dotenv';
+dotenv.config();
+
+export interface ExecutableOrder {
+  limitOrderData: ILimitOrder,
+  profitGwei: BigNumber,
+  inAmount: BigNumber,
+  outAmount: BigNumber,
+  outDiff: BigNumber
+}
 
 /**
  * @param priceUpdate Current state of a Sushiswap pool
@@ -10,7 +21,7 @@ import { getMinRate } from "../utils/price";
  * @returns Array of orders that when executed will net some profit for the relayer
  */
 export async function profitableOrders(priceUpdate: PriceUpdate, orders: ILimitOrder[], data = getData)
-  : Promise<{ limitOrderData: ILimitOrder, profitEth: BigNumber, inAmount: BigNumber, outAmount: BigNumber, outDiff: BigNumber }[]> {
+  : Promise<ExecutableOrder[]> {
 
   if (orders.length === 0) return [];
 
@@ -18,28 +29,21 @@ export async function profitableOrders(priceUpdate: PriceUpdate, orders: ILimitO
 
   const { gasPrice, token0EthPrice, token1EthPrice } = await data(priceUpdate); // eth prices are multiplied by 1e9
 
-  if (!gasPrice || !token0EthPrice) return [];
+  if (!gasPrice || !token0EthPrice || !token1EthPrice) return [];
 
   return await _getProfitableOrders(priceUpdate, orders, sellingToken0, gasPrice, token0EthPrice, token1EthPrice);
 }
 
 export async function _getProfitableOrders(priceUpdate: PriceUpdate, orders: ILimitOrder[], sellingToken0: boolean, gasPrice: BigNumber, token0EthPrice: BigNumber, token1EthPrice: BigNumber)
-  : Promise<{ limitOrderData: ILimitOrder, profitEth: BigNumber, inAmount: BigNumber, outAmount: BigNumber, outDiff: BigNumber }[]> {
+  : Promise<ExecutableOrder[]> {
 
   orders = sortOrders(orders);
 
-  const profitable: {
-    limitOrderData: ILimitOrder,
-    profitEth: BigNumber,
-    inAmount: BigNumber,
-    outDiff: BigNumber,
-    outAmount: BigNumber
-  }[] = [];
+  const profitable: ExecutableOrder[] = [];
 
-  orders.forEach(order => {
-
+  orders.forEach(orderData => {
     // how much of the order can be filled without crossing limit price ? e.g. huge orders will be partially filled because their price impact is too high
-    const effects = getOrderEffects(order, sellingToken0, priceUpdate, token0EthPrice, token1EthPrice);
+    const effects = getOrderEffects(orderData, sellingToken0, priceUpdate, token0EthPrice, token1EthPrice);
 
     if (!!effects) {
 
@@ -48,17 +52,17 @@ export async function _getProfitableOrders(priceUpdate: PriceUpdate, orders: ILi
         inAmount,
         outAmount,
         outDiff,
-        profitEth,
+        profitGwei,
         newPrice,
         newToken0Amount,
         newToken1Amount
       } = effects;
 
-      if (profitEth.gt(gasPrice.mul(1e9).mul("280000"))) { // ~ 20k gas profit
+      if (profitGwei.gt(gasPrice.mul("280000"))) { // ~ 20k gas profit
 
         profitable.push({
-          limitOrderData: order,
-          profitEth,
+          limitOrderData: orderData,
+          profitGwei,
           inAmount,
           outDiff,
           outAmount
@@ -80,35 +84,73 @@ export async function _getProfitableOrders(priceUpdate: PriceUpdate, orders: ILi
 
 // lowest sell order first
 export function sortOrders(orders: ILimitOrder[]) {
-  return orders.sort((a, b) => BigNumber.from(a.price).sub(BigNumber.from(b.price)).lt(0) ? -1 : 1);
+  return orders.sort((a, b) => BigNumber.from(a.price.toString()).sub(BigNumber.from(b.price.toString())).lt(0) ? -1 : 1);
 }
 
-export async function getData(priceUpdate: PriceUpdate): Promise<{ gasPrice?: BigNumber, token0EthPrice?: BigNumber, token1EthPrice?: BigNumber }> {
+export async function getData(priceUpdate: PriceUpdate, chainId = +process.env.CHAINID): Promise<{ gasPrice?: BigNumber, token0EthPrice?: BigNumber, token1EthPrice?: BigNumber }> {
 
-  let [_gasPrice, _token0EthPrice]: any[] = await Promise.all([
-    axios(`https://api.etherscan.io/api?module=gastracker&action=gasoracle&apikey=${process.env.ETHERSCAN_API_KEY}`),
-    axios(`https://api.coingecko.com/api/v3/coins/ethereum/contract/${priceUpdate.token0.address}`)
+  let [gasPrice, token0EthPrice]: Array<BigNumber | void> = await Promise.all([
+    getGasPrice(chainId),
+    getToken0EthPrice(chainId, priceUpdate.token0.address)
   ]);
 
-  _gasPrice = _gasPrice.data?.result?.FastGasPrice as string;
-  _token0EthPrice = _token0EthPrice.data?.market_data?.current_price?.eth as number;
+  if (priceUpdate.token0.address === process.env.WETH_ADDRESS) token0EthPrice = BigNumber.from("100000000"); // better precision; calculated price is usually off by some %
 
-  if (priceUpdate.token0.address === process.env.WETH_ADDRESS) _token0EthPrice = 1;
+  if (!gasPrice || !token0EthPrice) {
+    console.log("Failed to fetch gas price or token0 price");
+    return {};
+  }
 
-  if (!_gasPrice || !_token0EthPrice) return {};
-
-  const gasPrice = BigNumber.from(_gasPrice);
-  const token0EthPrice = BigNumber.from(_token0EthPrice * 1e8);
   const token1EthPrice = token0EthPrice.mul(priceUpdate.token1.price).div(PRICE_MULTIPLIER);
 
   return { gasPrice, token0EthPrice, token1EthPrice };
 }
 
+async function getGasPrice(chainId: number) {
+
+  if (chainId === ChainId.MAINNET) {
+
+    const gasPrice = await axios(`https://api.etherscan.io/api?module=gastracker&action=gasoracle&apikey=${process.env.ETHERSCAN_API_KEY}`);
+    return !!gasPrice?.data?.result?.FastGasPrice ? BigNumber.from(Math.floor(+gasPrice.data.result.FastGasPrice)) : undefined
+
+  } else if (chainId === ChainId.MATIC) {
+
+    const gasPrice = await axios('https://gasstation-mainnet.matic.network');
+    return !!gasPrice?.data.fast ? BigNumber.from(Math.floor(+gasPrice.data.fast)) : undefined;
+
+  }
+}
+
+// return price of token0 in terms of "WETH" or whichever coin the network fees are paid in (padded by 1e8)
+async function getToken0EthPrice(chainId: number, tokenAddress: string) {
+
+  if (chainId == ChainId.MAINNET) {
+
+    const token0EthPrice = await axios(`https://api.coingecko.com/api/v3/coins/ethereum/contract/${tokenAddress}`);
+
+    if (!token0EthPrice?.data?.market_data?.current_price?.eth) return;
+
+    return BigNumber.from(Math.floor(token0EthPrice.data?.market_data?.current_price?.eth * 1e8));
+
+  } else if (chainId === ChainId.MATIC) {
+
+    const [token0USDPrice, maticPrice] = await Promise.all([
+      axios(`https://api.coingecko.com/api/v3/coins/polygon-pos/contract/${tokenAddress}`),
+      axios(`https://api.coingecko.com/api/v3/coins/matic-network?localization=false&tickers=false&market_data=true&community_data=false&developer_data=false&sparkline=false`)
+    ]);
+
+    if (!token0USDPrice?.data?.market_data?.current_price.usd || !maticPrice?.data?.market_data?.current_price.usd) return;
+
+    return BigNumber.from(Math.floor(token0USDPrice?.data?.market_data?.current_price.usd * 1e8 / maticPrice?.data?.market_data?.current_price.usd));
+
+  }
+}
+
 export function getOrderEffects(orderData: ILimitOrder, sellingToken0: boolean, priceUpdate: PriceUpdate, token0EthPrice: BigNumber, token1EthPrice: BigNumber):
-  false | { partialFill: BigNumber, inAmount: BigNumber, outAmount: BigNumber, outDiff: BigNumber, profitEth: BigNumber, newPrice: BigNumber, newToken0Amount: BigNumber, newToken1Amount: BigNumber } {
+  false | { partialFill: BigNumber, inAmount: BigNumber, outAmount: BigNumber, outDiff: BigNumber, profitGwei: BigNumber, newPrice: BigNumber, newToken0Amount: BigNumber, newToken1Amount: BigNumber } {
 
   const _inAmount = BigNumber.from(orderData.order.amountIn);
-  const limitPrice = BigNumber.from(orderData.price);
+  const limitPrice = BigNumber.from(orderData.price.toString());
 
   const { inAmount, outAmount, newPrice, newToken0Amount, newToken1Amount } = maxMarketSell(
     limitPrice,
@@ -126,16 +168,23 @@ export function getOrderEffects(orderData: ILimitOrder, sellingToken0: boolean, 
   const minRate = getMinRate(orderData.order.amountIn, orderData.order.amountOut);
   const outDiff = outAmount.sub(inAmount.mul(minRate).div(PRICE_MULTIPLIER)); // relayer profit in out tokens
 
-  let profitEth: BigNumber;
+  let profitGwei: BigNumber;
 
+  // todo test case for tokens with diferent decimal count
   if (outDiff.lt("0")) {
-    profitEth = BigNumber.from("0");
+    profitGwei = BigNumber.from("0");
   } else {
-    profitEth = outDiff.mul(sellingToken0 ? token1EthPrice : token0EthPrice).div(1e8); // eth price 1e8 padded
+    console.log('outDiff', outDiff.toString());
+
+    // eth price is already 1e8 padded
+    // mul by 10 to get price in terms of gewi units
+    const price = BigNumber.from(10).mul(sellingToken0 ? token1EthPrice : token0EthPrice);
+    const tokenDecimalPadding = BigNumber.from("10").pow(orderData.order.tokenOutDecimals);
+    profitGwei = outDiff.mul(price).div(tokenDecimalPadding);
   }
 
 
-  return { partialFill, inAmount, outAmount, outDiff, profitEth, newPrice, newToken0Amount, newToken1Amount };
+  return { partialFill, inAmount, outAmount, outDiff, profitGwei, newPrice, newToken0Amount, newToken1Amount };
 }
 
 /**
@@ -179,6 +228,7 @@ export function maxMarketSell(
     const x = sellingToken0 ? token0Amount : token1Amount;
     const y = sellingToken0 ? token1Amount : token0Amount;
     inAmount = y.sub(x.mul(limitPrice).div(PRICE_MULTIPLIER)).mul(PRICE_MULTIPLIER).div(executionPrice.add(limitPrice));
+
     return { inAmount, ...marketSellOutput(sellingToken0, inAmount, token0Amount, token1Amount) };
 
   } else {

@@ -74,8 +74,8 @@ export class Database {
 
     const model = new this.LimitOrderModel(limitOrder);
 
-    return model.save().then(() => console.log('Limit order saved')).catch(err => {
-      console.log('Failed to save limit order')
+    return model.save().then((a) => console.log(a.price.toString(), 'Limit order saved')).catch(err => {
+      console.log('Failed to save limit order');
       if (err.code === 11000) {
         console.log('Ignored saving an existing order');
       } else {
@@ -84,8 +84,9 @@ export class Database {
     });
   }
 
+  // TODO filter for start date & expiry here
   public async getLimitOrders(price: BigNumber, pairAddress: string, tokenIn: string): Promise<ILimitOrder[]> {
-    return this.LimitOrderModel.find({ pairAddress, 'order.tokenIn': tokenIn, price: { $lt: price.toString() } }).exec();
+    return this.LimitOrderModel.find({ pairAddress, 'order.tokenIn': tokenIn/* , price: { $lt: price.toString() } */ }).exec();
   }
 
   public async updateLimitOrders(orders: ILimitOrder[]): Promise<UpdateWriteOpResult[]> {

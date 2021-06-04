@@ -5,7 +5,7 @@ import { filter, map } from 'rxjs/operators';
 import { IMessageEvent, w3cwebsocket } from 'websocket';
 import { IWatchPair, ILimitOrder } from '../models/models';
 import { getOrderPrice } from '../utils/price';
-import { validLimitOrderData } from './validOrders';
+import { validateLimitOrderData } from './validOrders';
 
 const socketUrl = 'wss://w4s58dcj10.execute-api.us-east-1.amazonaws.com/dev';
 
@@ -63,7 +63,7 @@ function _watchLimitOrders(watchPairs: IWatchPair[]): Observable<ILimitOrderData
 export function watchLimitOrders(watchPairs: IWatchPair[], sub = _watchLimitOrders): Observable<ILimitOrder> {
   return sub(watchPairs).pipe(
 
-    filter(order => validLimitOrderData(order, watchPairs)),
+    filter(order => validateLimitOrderData(order, watchPairs)),
 
     map((order: ILimitOrderData) => {
 

@@ -4,7 +4,6 @@ import { ILimitOrder, IWatchPair } from "../models/models";
 import { utils, Contract, providers, BigNumber } from 'ethers';
 import stopLimitOrderABI from '../abis/stopLimitOrder';
 import { useWss } from "../price-updates/pair-updates";
-import { isExportAssignment } from "typescript";
 
 // This is called just before we try to execute orders
 // Check if the order is (still) valid
@@ -21,35 +20,39 @@ export async function validOrders(orders: ILimitOrder[], database): Promise<ILim
   // Add this to your env later
   let stopLimitOrderContract = new Contract(getVerifyingContract(+process.env.CHAINID), stopLimitOrderABI, provider);
 
-
   await Promise.all(orders.map(async (order) => {
-
-    console.log(order);
 
     const limitOrder = LimitOrder.getLimitOrder(order.order);
 
-    const filled = await isFilled(limitOrder, stopLimitOrderContract);
+    const { filled, filledAmount } = await isFilled(limitOrder, stopLimitOrderContract);
+
+    order.filledAmount = filledAmount.toString();
+
     const canceled = await isCanceled(limitOrder, stopLimitOrderContract);
     const expired = isExpired(limitOrder);
+    const live = isLive(limitOrder);
 
-    if (filled || canceled || expired) {
-      invalidOrders.push(order);
+    if (filled || canceled || expired || !live) {
+      if (!live) {
+        invalidOrders.push(order);
+      }
     } else {
       validOrders.push(order);
     }
 
   }));
 
-  // todo retink deletion.. There should probably be a seperate service for this
+  // todo rethink deletion.. There should probably be a seperate service for this
   // await database.deleteLimitOrders(invalidOrders); // delete the order only if it is expired / filled
 
   return validOrders;
 }
 
-export async function isFilled(limitOrder: LimitOrder, stopLimitOrderContract: Contract): Promise<boolean> {
+export async function isFilled(limitOrder: LimitOrder, stopLimitOrderContract: Contract): Promise<{ filled: boolean, filledAmount: BigNumber }> {
 
   const orderStatus = await stopLimitOrderContract.orderStatus(limitOrder.getTypeHash());
-  return (orderStatus.toString() === limitOrder.amountOutRaw);
+
+  return { filled: orderStatus.toString() === limitOrder.amountOutRaw, filledAmount: BigNumber.from(orderStatus) }
 
 }
 
@@ -63,12 +66,16 @@ export function isExpired(limitOrder: LimitOrder): boolean {
   return (Number(limitOrder.endTime) < Math.floor(Date.now() / 1000));
 }
 
+export function isLive(limitOrder: LimitOrder): boolean {
+  return (Number(limitOrder.startTime) < Math.floor(Date.now() / 1000));
+}
+
 // This is called after we receive the order from the user
 // todo don't store orders that aren't present in the watch pairs array
 /*
   Checks: Validate Signature, Validate Amounts, Validate Expiry
 */
-export function validLimitOrderData(order: ILimitOrderData, watchPairs: IWatchPair[]): boolean {
+export function validateLimitOrderData(order: ILimitOrderData, watchPairs: IWatchPair[]): boolean {
 
   let limitOrder;
 

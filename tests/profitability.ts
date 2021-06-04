@@ -1,4 +1,5 @@
 import { BigNumber } from '@ethersproject/bignumber';
+import { ChainId } from '@sushiswap/sdk';
 import { expect } from 'chai';
 import { ILimitOrder } from '../src/models/models';
 import { maxMarketSell, getOrderEffects, getData, sortOrders, marketSellOutput, getAmountOut, profitableOrders } from '../src/orders/profitability';
@@ -245,7 +246,7 @@ describe('Profitability', () => {
   });
 
   it('Should fetch external data', async () => {
-    const { gasPrice, token0EthPrice, token1EthPrice } = await getData(priceUpdate);
+    const { gasPrice, token0EthPrice, token1EthPrice } = await getData(priceUpdate, ChainId.MAINNET);
     expect(!!gasPrice && !!token0EthPrice && !!token1EthPrice).to.be.true;
     expect(gasPrice.gt("0") && token0EthPrice.gt("0") && token1EthPrice.gt("0")).to.be.true;
   }).timeout(5000);

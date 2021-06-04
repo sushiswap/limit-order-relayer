@@ -3,7 +3,7 @@ import { ILimitOrder, IWatchPair } from './models/models';
 import { PriceUpdate, watchSushiwapPairs } from './price-updates/pair-updates';
 import { watchLimitOrders, stopReceivingOrders } from './orders/txReceiver';
 import { validOrders } from './orders/validOrders';
-import { profitableOrders } from './orders/profitability';
+import { ExecutableOrder, profitableOrders } from './orders/profitability';
 import { executeOrders } from './orders/execute';
 import { Observable, Subject } from 'rxjs';
 import { watchPairModel } from './models/mongooseModels';
@@ -13,11 +13,11 @@ export class LimitOrderRelayer {
   // parameterize the following for easier testing
   public LimitOrderUpdates: (a: IWatchPair[]) => Observable<ILimitOrder>;
   public SushiswapPairUpdates: (a: IWatchPair[]) => Observable<PriceUpdate>;
-  public executeOrders: (a: ILimitOrder[]) => void;
+  public executeOrders: (a: ExecutableOrder[]) => void;
   public database: Database;
 
 
-  public _executeOrders = new Subject<ILimitOrder[]>();
+  private _executeOrders = new Subject<ExecutableOrder[]>();
 
 
   constructor(orderUpdates, pairUpdates, database, executeOrders) {
@@ -27,6 +27,11 @@ export class LimitOrderRelayer {
     this.database = database;
     this.executeOrders = executeOrders;
 
+  }
+
+  // for logging purposes  
+  public get submittedOrders(): Observable<ExecutableOrder[]> {
+    return this._executeOrders.asObservable();
   }
 
 
@@ -49,25 +54,21 @@ export class LimitOrderRelayer {
     // subscribe to price updates of pools & execute orders
     this.SushiswapPairUpdates(watchPairs).subscribe(async (priceUpdate: PriceUpdate) => {
 
-      console.log(`${priceUpdate.pair.token0.symbol}-${priceUpdate.pair.token1.symbol}`, priceUpdate.token0.price.toString());
+      console.log(`price update: ${priceUpdate.pair.token0.symbol}-${priceUpdate.pair.token1.symbol}`, priceUpdate.token0.price.toString());
+
       // fetch limit orders that might be ready for execution
       // one of the two arrays should generally be empty
       const __token0Orders = await this.database.getLimitOrders(priceUpdate.token0.price, priceUpdate.pair.pairAddress, priceUpdate.token0.address);
       const __token1Orders = await this.database.getLimitOrders(priceUpdate.token1.price, priceUpdate.pair.pairAddress, priceUpdate.token1.address);
-      if (__token0Orders.length > 0) console.log('found order');
-      if (__token1Orders.length > 0) console.log('found order');
+      console.log(__token0Orders.map(o => o.price.toString()), __token1Orders.map(o => o.price.toString()));
 
       // filter out expired / already filled orders
       const _token0Orders = await validOrders(__token0Orders, this.database);
       const _token1Orders = await validOrders(__token1Orders, this.database);
-      if (_token0Orders.length > 0) console.log('found valid order');
-      if (_token1Orders.length > 0) console.log('found valid order');
 
       // filter out orders that aren't profitable
       const token0Orders = await profitableOrders(priceUpdate, _token0Orders);
       const token1Orders = await profitableOrders(priceUpdate, _token1Orders);
-      if (token0Orders.length > 0) console.log('found profitable order');
-      if (token1Orders.length > 0) console.log('found profitable order');
 
       // this.execute(token0Orders);
       // this.execute(token1Orders);
@@ -78,16 +79,11 @@ export class LimitOrderRelayer {
   }
 
 
-  private execute(orders: ILimitOrder[]) {
+  private execute(orders: ExecutableOrder[]) {
     if (orders.length > 0) {
       this.executeOrders(orders);
       this._executeOrders.next(orders);
     }
-  }
-
-
-  public get submittedOrders(): Observable<ILimitOrder[]> {
-    return this._executeOrders.asObservable();
   }
 
 }

@@ -1,5 +1,5 @@
 import Mongoose from "mongoose";
-import { ILimitOrder, ILimitOrderModel, IWatchPairModel } from "./models";
+import { ILimitOrderModel, IWatchPairModel } from "./models";
 import { isLessThan } from "../utils/orderTokens";
 import { getPairAddress } from "../utils/pairAddress";
 
@@ -71,6 +71,8 @@ watchPairModel.pre<IWatchPairModel>("save", function (next) {
 limitOrderModel.pre<ILimitOrderModel>("save", function (next) {
 
   this.pairAddress = getPairAddress(this.order.tokenIn, this.order.tokenOut);
+
+  if (this.price.toString()[0] == '-') throw new Error('Price overflow');
 
   next();
 
