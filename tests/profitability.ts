@@ -146,12 +146,12 @@ describe('Profitability', () => {
 
     if (!!effects) {
 
-      const { partialFill, inAmount, outAmount, outDiff, profitEth, newPrice, newToken0Amount, newToken1Amount } = effects;
+      const { partialFill, inAmount, outAmount, outDiff, profitGwei, newPrice, newToken0Amount, newToken1Amount } = effects;
       expect(partialFill).to.be.false;
       expect(inAmount.toString()).to.be.eq("5000000000000000000000");
       expect(outDiff.toString()).to.be.eq("434366022828002928"); // 0.4 weth
       expect(outDiff.add(profitableSellOrder.order.amountOut).toString()).to.be.eq(outAmount.toString(), "profit was not calculated correctly");
-      expect(profitEth.toString()).to.be.eq("434366022828002928", "profit in eth was not calculated correctly");
+      expect(profitGwei.toString()).to.be.eq("434366022", "profit in eth was not calculated correctly");
       expect(newPrice.toString()).to.be.eq(newToken1Amount.mul(PRICE_MULTIPLIER).div(newToken0Amount).toString(), "new price was not calculated correctly");
       expect(newToken0Amount.toString()).to.be.eq(priceUpdate.token0.poolBalance.add(inAmount).toString(), "pool balance 0 wasn't updated correctly");
       expect(newToken1Amount.toString()).to.be.eq(priceUpdate.token1.poolBalance.sub(outAmount).toString(), "pool balance 1 wasn't updated correctly");
@@ -176,7 +176,7 @@ describe('Profitability', () => {
   it('Should caclulate the state after limit order execution [2]', () => {
     const token1EthPrice = BigNumber.from("100000000");
     const token0EthPrice = BigNumber.from("49954");
-    const _profitableSellOrder = JSON.parse(JSON.stringify(profitableSellOrder));;
+    const _profitableSellOrder = JSON.parse(JSON.stringify(profitableSellOrder));
 
     _profitableSellOrder.order.amountIn = "2100000000000000000000000"; // 2.1m dai
     _profitableSellOrder.order.amountOut = "1000000000000000000000";
@@ -189,12 +189,12 @@ describe('Profitability', () => {
 
     if (!!effects) {
 
-      const { partialFill, inAmount, outAmount, outDiff, profitEth, newPrice, newToken0Amount, newToken1Amount } = effects;
+      const { partialFill, inAmount, outAmount, outDiff, profitGwei, newPrice, newToken0Amount, newToken1Amount } = effects;
       expect(partialFill).to.be.true;
       expect(inAmount.toString()).to.be.eq("1149378868394259778113658"); // 1.1m
       expect(outDiff.toString()).to.be.eq("6137162461943073335"); // 6.1 weth
       expect(outAmount.sub(outDiff).eq(inAmount.mul(minRate).div(PRICE_MULTIPLIER))).to.be.true;
-      expect(profitEth.toString()).to.be.eq("6137162461943073335", "profit in eth was not calculated correctly");
+      expect(profitGwei.toString()).to.be.eq("6137162461", "profit in eth was not calculated correctly");
       expect(newPrice.toString()).to.be.eq(newToken1Amount.mul(PRICE_MULTIPLIER).div(newToken0Amount).toString(), "new price was not calculated correctly");
       expect(newToken0Amount.toString()).to.be.eq(priceUpdate.token0.poolBalance.add(inAmount).toString(), "pool balance 0 wasn't updated correctly");
       expect(newToken1Amount.toString()).to.be.eq(priceUpdate.token1.poolBalance.sub(outAmount).toString(), "pool balance 1 wasn't updated correctly");
@@ -218,12 +218,13 @@ describe('Profitability', () => {
 
     if (!!effects) {
 
-      const { partialFill, inAmount, outAmount, outDiff, profitEth, newPrice, newToken0Amount, newToken1Amount } = effects;
+      const { partialFill, inAmount, outAmount, outDiff, profitGwei, newPrice, newToken0Amount, newToken1Amount } = effects;
+
       expect(partialFill).to.be.true;
       expect(inAmount.toString()).to.be.eq("18688470915997364972"); // 18 weth
       expect(outDiff.toString()).to.be.eq("14232117311711939112"); // 14 dai ~ 0.007 weth
       expect(outAmount.sub(outDiff).eq(inAmount.mul(minRate).div(PRICE_MULTIPLIER))).to.be.true;
-      expect(profitEth.toString()).to.be.eq("7109511881892582", "profit in eth was not calculated correctly");
+      expect(profitGwei.toString()).to.be.eq("7109511", "profit in eth was not calculated correctly");
       expect(newPrice.toString()).to.be.eq(newToken0Amount.mul(PRICE_MULTIPLIER).div(newToken1Amount).toString(), "new price was not calculated correctly");
       expect(newToken0Amount.toString()).to.be.eq(priceUpdate.token0.poolBalance.sub(outAmount).toString(), "pool balance 0 wasn't updated correctly");
       expect(newToken1Amount.toString()).to.be.eq(priceUpdate.token1.poolBalance.add(inAmount).toString(), "pool balance 1 wasn't updated correctly");
