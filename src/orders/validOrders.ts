@@ -1,5 +1,4 @@
 import { getVerifyingContract, ILimitOrderData, LimitOrder } from "limitorderv2-sdk";
-import { Database } from "../database/database";
 import { ILimitOrder, IWatchPair } from "../models/models";
 import { utils, Contract, providers, BigNumber } from 'ethers';
 import stopLimitOrderABI from '../abis/stopLimitOrder';
