@@ -2,6 +2,8 @@ import Mongoose from "mongoose";
 import { ILimitOrderModel, IWatchPairModel } from "./models";
 import { isLessThan } from "../utils/orderTokens";
 import { getPairAddress } from "../utils/pairAddress";
+import dotenv from 'dotenv';
+dotenv.config();
 
 require('mongoose-long')(Mongoose);
 
@@ -24,7 +26,7 @@ export const watchPairModel = new Schema({
 })
 
 export const limitOrderModel = new Schema({
-  price: Long,
+  price: String, // Long,
   digest: { type: String, unique: true },
   order: {
     maker: String,
@@ -35,8 +37,8 @@ export const limitOrderModel = new Schema({
     amountIn: String,
     amountOut: String,
     recipient: String,
-    startTime: String,
-    endTime: String,
+    startTime: Number,
+    endTime: Number,
     stopPrice: String,
     oracleAddress: String,
     oracleData: String,
@@ -48,8 +50,34 @@ export const limitOrderModel = new Schema({
   pairAddress: String,
 });
 
-watchPairModel.set("collection", "watchpairs");
-limitOrderModel.set("collection", "limitorders");
+export const executedOrderModel = new Schema({
+  digest: String,
+  order: {
+    maker: String,
+    tokenIn: String,
+    tokenOut: String,
+    tokenInDecimals: Number,
+    tokenOutDecimals: Number,
+    amountIn: String,
+    amountOut: String,
+    recipient: String,
+    startTime: Number,
+    endTime: Number,
+    stopPrice: String,
+    oracleAddress: String,
+    oracleData: String,
+    v: Number,
+    r: String,
+    s: String,
+    chainId: Number
+  },
+  fillAmount: String,
+  txHash: String
+})
+
+watchPairModel.set("collection", `watchpairs_${process.env.CHAINID}`);
+limitOrderModel.set("collection", `limitorders_${process.env.CHAINID}`);
+executedOrderModel.set("collection", `executedorders_${process.env.CHAINID}`);
 
 
 // middleware - execute before saving a "watch pair"

@@ -1,5 +1,5 @@
 import { Database } from './database/database';
-import { ILimitOrder, IWatchPair } from './models/models';
+import { IExecutedOrder, ILimitOrder, IWatchPair } from './models/models';
 import { PriceUpdate, watchSushiwapPairs } from './price-updates/pair-updates';
 import { watchLimitOrders, stopReceivingOrders } from './orders/txReceiver';
 import { validOrders } from './orders/validOrders';
@@ -13,7 +13,7 @@ export class LimitOrderRelayer {
   // parameterize the following for easier testing
   public LimitOrderUpdates: (a: IWatchPair[]) => Observable<ILimitOrder>;
   public SushiswapPairUpdates: (a: IWatchPair[]) => Observable<PriceUpdate>;
-  public executeOrders: (a: ExecutableOrder[]) => void;
+  public executeOrders: (a: ExecutableOrder[]) => IExecutedOrder[];
   public database: Database;
 
 
@@ -60,8 +60,7 @@ export class LimitOrderRelayer {
       // one of the two arrays should generally be empty
       const __token0Orders = await this.database.getLimitOrders(priceUpdate.token0.price, priceUpdate.pair.pairAddress, priceUpdate.token0.address);
       const __token1Orders = await this.database.getLimitOrders(priceUpdate.token1.price, priceUpdate.pair.pairAddress, priceUpdate.token1.address);
-      console.log(__token0Orders.map(o => o.price.toString()), __token1Orders.map(o => o.price.toString()));
-
+      console.log(__token0Orders, __token1Orders);
       // filter out expired / already filled orders
       const _token0Orders = await validOrders(__token0Orders, this.database);
       const _token1Orders = await validOrders(__token1Orders, this.database);
@@ -70,18 +69,21 @@ export class LimitOrderRelayer {
       const token0Orders = await profitableOrders(priceUpdate, _token0Orders);
       const token1Orders = await profitableOrders(priceUpdate, _token1Orders);
 
-      // this.execute(token0Orders);
-      // this.execute(token1Orders);
-
+      this.execute(token0Orders);
+      this.execute(token1Orders);
 
     });
 
   }
 
 
-  private execute(orders: ExecutableOrder[]) {
+  private async execute(orders: ExecutableOrder[]) {
     if (orders.length > 0) {
-      this.executeOrders(orders);
+
+      const executed = await this.executeOrders(orders);
+
+      await this.database.saveExecutedOrder(executed);
+
       this._executeOrders.next(orders);
     }
   }

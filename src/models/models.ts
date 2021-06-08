@@ -26,3 +26,12 @@ export interface ILimitOrder {
 }
 
 export interface ILimitOrderModel extends ILimitOrder, Document { };
+
+export interface IExecutedOrder {
+  order: ILimitOrderData,
+  digest: string,
+  txHash: string,
+  fillAmount: string
+}
+
+export interface IExecutedOrderModel extends IExecutedOrder, Document { };

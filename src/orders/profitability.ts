@@ -4,8 +4,6 @@ import { PriceUpdate, PRICE_MULTIPLIER } from "../price-updates/pair-updates";
 import axios from 'axios';
 import { getMinRate } from "../utils/price";
 import { ChainId } from "@sushiswap/sdk";
-import dotenv from 'dotenv';
-dotenv.config();
 
 export interface ExecutableOrder {
   limitOrderData: ILimitOrder,
