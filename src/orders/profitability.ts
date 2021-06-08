@@ -56,7 +56,7 @@ export async function _getProfitableOrders(priceUpdate: PriceUpdate, orders: ILi
         newToken1Amount
       } = effects;
 
-      if (profitGwei.gt(gasPrice.mul("280000"))) { // ~ 20k gas profit
+      if (profitGwei.gt(gasPrice.mul("300000"))) { // ~ 40k gas profit
 
         profitable.push({
           limitOrderData: orderData,
@@ -104,7 +104,7 @@ export async function getData(priceUpdate: PriceUpdate, chainId = +process.env.C
   return { gasPrice, token0EthPrice, token1EthPrice };
 }
 
-async function getGasPrice(chainId: number) {
+export async function getGasPrice(chainId: number) {
 
   if (chainId === ChainId.MAINNET) {
 
@@ -172,7 +172,6 @@ export function getOrderEffects(orderData: ILimitOrder, sellingToken0: boolean, 
   if (outDiff.lt("0")) {
     profitGwei = BigNumber.from("0");
   } else {
-    console.log('outDiff', outDiff.toString());
 
     // eth price is already 1e8 padded
     // mul by 10 to get price in terms of gewi units

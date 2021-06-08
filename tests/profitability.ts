@@ -33,8 +33,8 @@ const profitableSellOrder: ILimitOrder = {
     amountIn: "5000000000000000000000", // 5k dai
     amountOut: "2000000000000000000", // 2 weth
     recipient: "0x6B175474E89094C44Da98b954EedeAC495271d0F",
-    startTime: "0",
-    endTime: "9999999999999",
+    startTime: 0,
+    endTime: 9999999999999,
     stopPrice: "0",
     oracleAddress: "0x6B175474E89094C44Da98b954EedeAC495271d0F",
     oracleData: "",

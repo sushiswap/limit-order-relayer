@@ -2,7 +2,7 @@ import { ChainId } from "@sushiswap/sdk";
 import { BigNumber, ethers, providers } from "ethers";
 import { FillLimitOrder, getDefaultReceiver, LimitOrder } from "limitorderv2-sdk";
 import { IExecutedOrder } from "../models/models";
-import { ExecutableOrder } from "./profitability";
+import { ExecutableOrder, getGasPrice } from "./profitability";
 
 // TODO cache to prevent republishing of recent orders ... const executedOrders: { [digest: string]: Date } = {};
 
@@ -21,7 +21,7 @@ export async function executeOrders(ordersData: ExecutableOrder[]): Promise<IExe
     const fillOrder = new FillLimitOrder(
       LimitOrder.getLimitOrder(order),
       [order.tokenIn, order.tokenOut],
-      BigNumber.from("0"),
+      minOut,
       executableOrder.inAmount,
       getDefaultReceiver(ChainId.MATIC),
       process.env.PROFIT_RECEIVER_ADDRESS
@@ -30,10 +30,18 @@ export async function executeOrders(ordersData: ExecutableOrder[]): Promise<IExe
     const provider = new providers.JsonRpcProvider(process.env.HTTP_JSON_RPC);
 
     const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
+    const gasPrice = await getGasPrice(+process.env.CHAINID);
 
-    if (!OrderCache.Instance.alreadyExecuted(executableOrder.limitOrderData.digest)) {
+    if (!gasPrice) {
+      console.log('Could not fetch gas prices');
+      return;
+    }
 
-      const fillStatus = await fillOrder.fillOrder(wallet, { forceExecution: true, gasPrice: BigNumber.from("1000000000") as any, open: false });
+    const alreadyExecuted = OrderCache.Instance.alreadyExecuted(executableOrder.limitOrderData.digest);
+
+    if (!alreadyExecuted) {
+
+      const fillStatus = await fillOrder.fillOrder(wallet, { forceExecution: false, gasPrice: BigNumber.from("1000000000") as any, open: false });
 
       if (fillStatus.executed) {
 
@@ -48,6 +56,7 @@ export async function executeOrders(ordersData: ExecutableOrder[]): Promise<IExe
 
       } else {
 
+        OrderCache.Instance.remove(executableOrder.limitOrderData.digest);
         console.log('Gas estimation failed');
 
       }
@@ -89,6 +98,12 @@ export class OrderCache {
     }
 
     return alreadyExecuted;
+
+  }
+
+  remove(digest: string) {
+
+    this.executedOrders = this.executedOrders.filter(o => o.digest !== digest);
 
   }
 

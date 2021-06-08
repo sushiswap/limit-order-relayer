@@ -60,7 +60,7 @@ export class LimitOrderRelayer {
       // one of the two arrays should generally be empty
       const __token0Orders = await this.database.getLimitOrders(priceUpdate.token0.price, priceUpdate.pair.pairAddress, priceUpdate.token0.address);
       const __token1Orders = await this.database.getLimitOrders(priceUpdate.token1.price, priceUpdate.pair.pairAddress, priceUpdate.token1.address);
-      console.log(__token0Orders, __token1Orders);
+
       // filter out expired / already filled orders
       const _token0Orders = await validOrders(__token0Orders, this.database);
       const _token1Orders = await validOrders(__token1Orders, this.database);
