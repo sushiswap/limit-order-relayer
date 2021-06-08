@@ -1,14 +1,7 @@
 import { IWatchPair } from "../models/models";
 import { BigNumber, ethers } from "ethers";
 import { Observable, Subject } from 'rxjs';
-import dotenv from 'dotenv';
 import ERC20_ABI from '../abis/erc20';
-
-dotenv.config();
-
-const provider = useWss() ?
-  new ethers.providers.WebSocketProvider(process.env.WEBSOCKET_JSON_RPC) :
-  new ethers.providers.JsonRpcProvider(process.env.HTTP_JSON_RPC);
 
 export const PRICE_MULTIPLIER = BigNumber.from(1e18.toString());
 
@@ -28,48 +21,30 @@ export interface PriceUpdate {
 
 export function watchSushiwapPairs(watchPairs: IWatchPair[]): Observable<PriceUpdate> {
 
-  // emit a PriceUpdate event after every swap for a given watch pair
+  const provider = useWss() ?
+    new ethers.providers.WebSocketProvider(process.env.WEBSOCKET_JSON_RPC) :
+    new ethers.providers.JsonRpcProvider(process.env.HTTP_JSON_RPC);
+
+
   const updates = new Subject<PriceUpdate>();
 
 
-  const fetchPairData = async (pair: IWatchPair) => {
+  watchPairs.forEach(async pair => {
 
-    const { token0Balance, token1Balance } = await getPairBalances(pair).catch();
+    updates.next(await fetchPairData(pair, provider)); // do it once at the beginning
 
-    if (!token0Balance || !token1Balance) return;
-
-    const token0 = {
-      price: (token1Balance.mul(PRICE_MULTIPLIER)).div(token0Balance),
-      poolBalance: token0Balance,
-      address: pair.token0.address
-    };
-
-    const token1 = {
-      price: (token0Balance.mul(PRICE_MULTIPLIER)).div(token1Balance),
-      poolBalance: token1Balance,
-      address: pair.token1.address
-    };
-
-    updates.next({ pair, token0, token1 });
-  }
-
-
-  watchPairs.forEach(pair => {
-
-    fetchPairData(pair); // do it once at the beginning
-
-    if (useWss()) { // Polygon has bad ws support rn
+    if (useWss()) {
 
       const filter = {
         address: pair.pairAddress,
         topics: [ethers.utils.id("Swap(address,uint256,uint256,uint256,uint256,address)")]
       };
 
-      provider.on(filter, async () => fetchPairData(pair));
+      provider.on(filter, async () => updates.next(await fetchPairData(pair, provider)));
 
     } else {
 
-      setInterval(() => fetchPairData(pair), 60000);
+      setInterval(async () => updates.next(await fetchPairData(pair, provider)), 60000); // each minute
 
     }
 
@@ -78,7 +53,28 @@ export function watchSushiwapPairs(watchPairs: IWatchPair[]): Observable<PriceUp
   return updates;
 }
 
-async function getPairBalances(pair: IWatchPair) {
+async function fetchPairData(pair: IWatchPair, provider: ethers.providers.Provider): Promise<PriceUpdate> {
+
+  const { token0Balance, token1Balance } = await getPairBalances(pair, provider).catch();
+
+  if (!token0Balance || !token1Balance) return;
+
+  const token0 = {
+    price: (token1Balance.mul(PRICE_MULTIPLIER)).div(token0Balance),
+    poolBalance: token0Balance,
+    address: pair.token0.address
+  };
+
+  const token1 = {
+    price: (token0Balance.mul(PRICE_MULTIPLIER)).div(token1Balance),
+    poolBalance: token1Balance,
+    address: pair.token1.address
+  };
+
+  return { pair, token0, token1 };
+}
+
+async function getPairBalances(pair: IWatchPair, provider: ethers.providers.Provider) {
 
   const token0 = new ethers.Contract(pair.token0.address, ERC20_ABI, provider);
   const token1 = new ethers.Contract(pair.token1.address, ERC20_ABI, provider);
