@@ -1,5 +1,5 @@
 import { BigNumber } from '@ethersproject/bignumber';
-import { ILimitOrderData, LimitOrder } from 'limitorderv2-sdk';
+import { ILimitOrderData, SOCKET_URL, LimitOrder } from 'limitorderv2-sdk';
 import { Observable, Subject } from 'rxjs';
 import { filter, map } from 'rxjs/operators';
 import { IMessageEvent, w3cwebsocket } from 'websocket';
@@ -7,7 +7,7 @@ import { IWatchPair, ILimitOrder } from '../models/models';
 import { getOrderPrice } from '../utils/price';
 import { validateLimitOrderData } from './validOrders';
 
-const socketUrl = 'wss://w4s58dcj10.execute-api.us-east-1.amazonaws.com/dev';
+const socketUrl = SOCKET_URL;
 
 let socket: w3cwebsocket;
 let intervalPointer: NodeJS.Timeout;
@@ -26,9 +26,9 @@ function startSocket(url: string, onMessage: (m: IMessageEvent) => void): w3cweb
   return socket;
 }
 
-const onError = (e) => console.log('SOCKET ERROR ', e.reason);
+const onError = (e) => console.log('SOCKET ERROR ', e);
 
-const onClose = (m) => console.log('SOCKET CLOSED');
+const onClose = () => console.log('SOCKET CLOSED');
 
 const onOpen = () => {
   clearInterval(intervalPointer);
