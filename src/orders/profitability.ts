@@ -10,7 +10,8 @@ export interface ExecutableOrder {
   profitGwei: BigNumber,
   inAmount: BigNumber,
   outAmount: BigNumber,
-  outDiff: BigNumber
+  outDiff: BigNumber,
+  minAmountIn: BigNumber
 }
 
 /**
@@ -53,7 +54,8 @@ export async function _getProfitableOrders(priceUpdate: PriceUpdate, orders: ILi
         profitGwei,
         newPrice,
         newToken0Amount,
-        newToken1Amount
+        newToken1Amount,
+        minAmountIn
       } = effects;
 
       if (profitGwei.gt(gasPrice.mul("380000"))) { // ~ 100k gas profit
@@ -63,7 +65,8 @@ export async function _getProfitableOrders(priceUpdate: PriceUpdate, orders: ILi
           profitGwei,
           inAmount,
           outDiff,
-          outAmount
+          outAmount,
+          minAmountIn,
         });
 
         priceUpdate.token0.poolBalance = newToken0Amount;
@@ -152,9 +155,10 @@ async function getToken0EthPrice(chainId: number, tokenAddress: string) {
 }
 
 export function getOrderEffects(orderData: ILimitOrder, sellingToken0: boolean, priceUpdate: PriceUpdate, token0EthPrice: BigNumber, token1EthPrice: BigNumber):
-  false | { partialFill: BigNumber, inAmount: BigNumber, outAmount: BigNumber, outDiff: BigNumber, profitGwei: BigNumber, newPrice: BigNumber, newToken0Amount: BigNumber, newToken1Amount: BigNumber } {
+  false | { partialFill: BigNumber, inAmount: BigNumber, outAmount: BigNumber, outDiff: BigNumber, minAmountIn: BigNumber, profitGwei: BigNumber, newPrice: BigNumber, newToken0Amount: BigNumber, newToken1Amount: BigNumber } {
 
   const _inAmount = BigNumber.from(orderData.order.amountIn);
+
   const limitPrice = BigNumber.from(orderData.price.toString());
 
   const { inAmount, outAmount, newPrice, newToken0Amount, newToken1Amount } = maxMarketSell(
@@ -170,8 +174,12 @@ export function getOrderEffects(orderData: ILimitOrder, sellingToken0: boolean, 
   if (inAmount.eq("0")) return false;
 
   const partialFill = inAmount.lt(_inAmount);
+
   const minRate = getMinRate(orderData.order.amountIn, orderData.order.amountOut);
+
   const outDiff = outAmount.sub(inAmount.mul(minRate).div(PRICE_MULTIPLIER)); // relayer profit in out tokens
+
+  const minAmountIn = getMinAmountIn(BigNumber.from(orderData.order.amountOut), sellingToken0, priceUpdate.token0.poolBalance, priceUpdate.token1.poolBalance);
 
   let profitGwei: BigNumber;
 
@@ -188,7 +196,7 @@ export function getOrderEffects(orderData: ILimitOrder, sellingToken0: boolean, 
   }
 
 
-  return { partialFill, inAmount, outAmount, outDiff, profitGwei, newPrice, newToken0Amount, newToken1Amount };
+  return { partialFill, inAmount, outAmount, outDiff, profitGwei, newPrice, newToken0Amount, newToken1Amount, minAmountIn };
 }
 
 /**
@@ -266,9 +274,23 @@ export function marketSellOutput(sellingToken0: boolean, inAmount: BigNumber, to
   return { outAmount, newPrice, newToken0Amount, newToken1Amount };
 }
 
+export function getAmountIn(amountOut: BigNumber, reserveIn: BigNumber, reserveOut: BigNumber) {
+  const numerator = reserveIn.mul(amountOut).mul(1000);
+  const denominator = reserveOut.sub(amountOut).mul(997);
+  return numerator.div(denominator).add(1);
+}
+
 export function getAmountOut(amountIn: BigNumber, reserveIn: BigNumber, reserveOut: BigNumber) {
   const amountInWithFee = amountIn.mul(BigNumber.from(997));
   const numerator = amountInWithFee.mul(reserveOut);
   const denominator = reserveIn.mul(BigNumber.from(1000)).add(amountInWithFee);
   return numerator.div(denominator);
+}
+
+export function getMinAmountIn(amountOut: BigNumber, sellingToken0: boolean, reserve0: BigNumber, reserve1: BigNumber) { // TODO test
+  if (sellingToken0) {
+    return getAmountIn(amountOut, reserve0, reserve1);
+  } else {
+    return getAmountIn(amountOut, reserve1, reserve0);
+  }
 }

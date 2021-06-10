@@ -21,7 +21,7 @@ export async function executeOrders(ordersData: ExecutableOrder[]): Promise<IExe
     let amountExternal: BigNumber;
 
     if (keepTokenIn) {
-      amountExternal = executableOrder.inAmount; // max slippage ... TODO
+      amountExternal = executableOrder.minAmountIn.add(1); // 0 slippage
     } else {
       amountExternal = executableOrder.outAmount.sub(1); // 0 slippage
     }
@@ -48,7 +48,7 @@ export async function executeOrders(ordersData: ExecutableOrder[]): Promise<IExe
 
     if (!alreadyExecuted) {
 
-      const fillStatus = await fillOrder.fillOrder(wallet, { forceExecution: true, gasPrice: BigNumber.from("1000000000") as any, open: false });
+      const fillStatus = await fillOrder.fillOrder(wallet, { forceExecution: false, gasPrice: BigNumber.from("1000000000") as any, open: false });
 
       if (fillStatus.executed) {
 
