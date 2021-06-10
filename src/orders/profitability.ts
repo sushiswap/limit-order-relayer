@@ -56,7 +56,7 @@ export async function _getProfitableOrders(priceUpdate: PriceUpdate, orders: ILi
         newToken1Amount
       } = effects;
 
-      if (profitGwei.gt(gasPrice.mul("300000"))) { // ~ 40k gas profit
+      if (profitGwei.gt(gasPrice.mul("380000"))) { // ~ 100k gas profit
 
         profitable.push({
           limitOrderData: orderData,
@@ -114,7 +114,14 @@ export async function getGasPrice(chainId: number) {
   } else if (chainId === ChainId.MATIC) {
 
     const gasPrice = await axios('https://gasstation-mainnet.matic.network');
-    return !!gasPrice?.data.fast ? BigNumber.from(Math.floor(+gasPrice.data.fast)) : undefined;
+    const fastPrice = gasPrice?.data.fast;
+    const standardPrice = gasPrice?.data.standard;
+
+    if (!fastPrice || !standardPrice) return;
+
+    const average = (+fastPrice + standardPrice) / 2;
+
+    return BigNumber.from(Math.floor(average));
 
   }
 }

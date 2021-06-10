@@ -1,8 +1,10 @@
 import { ChainId } from "@sushiswap/sdk";
 import { BigNumber, ethers, providers } from "ethers";
-import { FillLimitOrder, getDefaultReceiver, LimitOrder } from "limitorderv2-sdk";
+import { FillLimitOrder, getAdvancedReceiver, getDefaultReceiver, LimitOrder } from "limitorderv2-sdk";
 import { IExecutedOrder } from "../models/models";
 import { ExecutableOrder, getGasPrice } from "./profitability";
+import DEFAULT_TOKEN_LIST from '@sushiswap/default-token-list';
+import { _desiredProfitToken } from '../limitOrderConfig/pairs';
 
 // TODO cache to prevent republishing of recent orders ... const executedOrders: { [digest: string]: Date } = {};
 
@@ -14,34 +16,39 @@ export async function executeOrders(ordersData: ExecutableOrder[]): Promise<IExe
 
     const order = executableOrder.limitOrderData.order;
 
-    const minOut = executableOrder.outAmount.sub(1); // 0 slippage
+    const keepTokenIn = ExecuteHelper.Instance.keepTokenIn(executableOrder.limitOrderData.order.tokenIn, executableOrder.limitOrderData.order.tokenOut);
 
-    console.log('desired min out', minOut.toString()); // TODO
+    let amountExternal: BigNumber;
+
+    if (keepTokenIn) {
+      amountExternal = executableOrder.inAmount; // max slippage ... TODO
+    } else {
+      amountExternal = executableOrder.outAmount.sub(1); // 0 slippage
+    }
+
+    console.log(`keep token in: ${keepTokenIn}, amountExternal: ${amountExternal.toString()}`);
 
     const fillOrder = new FillLimitOrder(
       LimitOrder.getLimitOrder(order),
       [order.tokenIn, order.tokenOut],
-      minOut,
+      amountExternal,
       executableOrder.inAmount,
-      getDefaultReceiver(ChainId.MATIC),
-      process.env.PROFIT_RECEIVER_ADDRESS
+      getAdvancedReceiver(ChainId.MATIC),
+      process.env.PROFIT_RECEIVER_ADDRESS,
+      keepTokenIn
     );
 
-    const provider = new providers.JsonRpcProvider(process.env.HTTP_JSON_RPC);
+    const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, new providers.JsonRpcProvider(process.env.HTTP_JSON_RPC));
 
-    const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
     const gasPrice = await getGasPrice(+process.env.CHAINID);
 
-    if (!gasPrice) {
-      console.log('Could not fetch gas prices');
-      return;
-    }
+    if (!gasPrice) return console.log('Could not fetch gas prices');
 
-    const alreadyExecuted = OrderCache.Instance.alreadyExecuted(executableOrder.limitOrderData.digest);
+    const alreadyExecuted = ExecuteHelper.Instance.alreadyExecuted(executableOrder.limitOrderData.digest);
 
     if (!alreadyExecuted) {
 
-      const fillStatus = await fillOrder.fillOrder(wallet, { forceExecution: false, gasPrice: BigNumber.from("1000000000") as any, open: false });
+      const fillStatus = await fillOrder.fillOrder(wallet, { forceExecution: true, gasPrice: BigNumber.from("1000000000") as any, open: false });
 
       if (fillStatus.executed) {
 
@@ -56,7 +63,7 @@ export async function executeOrders(ordersData: ExecutableOrder[]): Promise<IExe
 
       } else {
 
-        OrderCache.Instance.remove(executableOrder.limitOrderData.digest);
+        ExecuteHelper.Instance.remove(executableOrder.limitOrderData.digest);
         console.log('Gas estimation failed');
 
       }
@@ -68,19 +75,27 @@ export async function executeOrders(ordersData: ExecutableOrder[]): Promise<IExe
   return executed;
 }
 
-export class OrderCache {
+export class ExecuteHelper {
 
   private executedOrders: Array<{ timestamp: number, digest: string }> = [];
 
   private timeBuffer = 1000 * 180; // 3 min
 
-  private static _instance: OrderCache;
+  public readonly profitTokens: string[];
+
+  private static _instance: ExecuteHelper;
 
   public static get Instance() {
     return this._instance || (this._instance = new this());
   }
 
-  protected constructor() { };
+  protected constructor() {
+
+    const tokens = DEFAULT_TOKEN_LIST.tokens.filter(token => token.chainId === +process.env.CHAINID);
+    this.profitTokens = _desiredProfitToken.map(tokenSymbol => tokens.find(token => token.symbol === tokenSymbol).address).reverse();
+    if (this.profitTokens.indexOf(undefined) !== -1) console.log(`Error! Couldn't find profit token`);
+
+  };
 
   alreadyExecuted(digest: string) {
 
@@ -105,6 +120,11 @@ export class OrderCache {
 
     this.executedOrders = this.executedOrders.filter(o => o.digest !== digest);
 
+  }
+
+  // given two token addressed figure out which one we want to keep profit in
+  keepTokenIn(tokenIn: string, tokenOut: string) {
+    return this.profitTokens.indexOf(tokenIn) > this.profitTokens.indexOf(tokenOut);
   }
 
 }

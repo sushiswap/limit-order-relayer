@@ -2,15 +2,12 @@ import { _limitOrderPairs } from '../limitOrderConfig/pairs';
 import { IWatchPair } from '../models/models';
 import DEFAULT_TOKEN_LIST from '@sushiswap/default-token-list';
 
-
-const tokenListUrl = "https://tokens.coingecko.com/uniswap/all.json";
-
-interface IToken { chainId: number, address: string, name: string, symbol: string, decimals: number, logoUrl: string };
-interface ITokenList { name: string, logoURL: string, keywords: any, timestamp: any, tokens: IToken[], version: any };
+interface IToken { chainId: number, address: string, name: string, symbol: string, decimals: number, logoUrl?: string };
+export interface ITokenList { name: string, logoURL?: string, keywords: any, timestamp: any, tokens: IToken[], version: any };
 
 export const getLimitOrderPairs = async (): Promise<IWatchPair[]> => {
 
-  const tokens = DEFAULT_TOKEN_LIST.tokens.filter(token => token.chainId === +process.env.CHAINID);
+  const tokens = (DEFAULT_TOKEN_LIST as ITokenList).tokens.filter(token => token.chainId === +process.env.CHAINID);
 
   const watchPairs: IWatchPair[] = [];
 
@@ -43,3 +40,4 @@ export const getLimitOrderPairs = async (): Promise<IWatchPair[]> => {
   return watchPairs;
 
 };
+

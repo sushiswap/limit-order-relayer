@@ -56,8 +56,8 @@ const mockLimitOrder: ILimitOrder = {
     amountIn: "1000000000000000000", // 1 WETH
     amountOut: "2500000000000000000000", // price is in terms of tokenOut (aka 2500 DAI)
     recipient: '0x80cF9eD9556729A09DCd1E7a58f8401eB44e5525',
-    startTime: '0',
-    endTime: '2000000000000',
+    startTime: 0,
+    endTime: 2000000000000,
     stopPrice: '0',
     oracleAddress: '0x0000000000000000000000000000000000000000',
     oracleData: '0x00000000000000000000000000000000000000000000000000000000000000',
