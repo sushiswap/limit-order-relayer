@@ -14,7 +14,7 @@ export async function copyRemoteOrders() {
     }
   })).data.data;
 
-  console.log(orders.);
+  // console.log(orders.);
 
 
 }

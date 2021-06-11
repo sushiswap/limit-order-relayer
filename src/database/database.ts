@@ -18,8 +18,6 @@ export class Database {
     return this._instance || (this._instance = new this());
   }
 
-  protected constructor() { };
-
   public async connectDB(): Promise<void> {
 
     return new Promise((resolve, reject) => {
