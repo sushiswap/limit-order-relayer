@@ -1,0 +1,10 @@
+{
+  "uid": "limitorder-relayer-polygon-v1",
+  "append": true,
+  "watch": true,
+  "script": "tsc && node dist/index.js",
+  "sourceDir": "/home/ubuntu/limit-order-relayers/polygon/sushi-relayer-server",
+  "logFile": "/home/ubuntu/limit-order-relayers/polygon/sushi-relayer-server/forever/logs/logs.log",
+  "outFile": "/home/ubuntu/limit-order-relayers/polygon/sushi-relayer-server/forever/logs/out.log",
+  "errFile": "/home/ubuntu/limit-order-relayers/polygon/sushi-relayer-server/forever/logs/error.log"
+}
