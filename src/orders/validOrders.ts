@@ -16,7 +16,6 @@ export async function validOrders(orders: ILimitOrder[], database): Promise<ILim
     new providers.WebSocketProvider(process.env.WEBSOCKET_JSON_RPC) :
     new providers.JsonRpcProvider(process.env.HTTP_JSON_RPC);
 
-  // Add this to your env later
   let stopLimitOrderContract = new Contract(getVerifyingContract(+process.env.CHAINID), stopLimitOrderABI, provider);
 
   await Promise.all(orders.map(async (order) => {
@@ -38,6 +37,7 @@ export async function validOrders(orders: ILimitOrder[], database): Promise<ILim
     } else {
       validOrders.push(order);
     }
+
 
   }));
 

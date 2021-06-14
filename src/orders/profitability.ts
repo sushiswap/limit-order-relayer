@@ -221,6 +221,8 @@ export function maxMarketSell(
 
   if (currentPrice.lt(limitPrice)) return { inAmount: BigNumber.from("0") } as any;
 
+  // const userBalance = await bentoBalance(order.order.maker, order.order.tokenIn, provider); todo
+
   inAmount = inAmount.sub(filledAmount);
 
   const marketSell = marketSellOutput(sellingToken0, inAmount, token0Amount, token1Amount);
