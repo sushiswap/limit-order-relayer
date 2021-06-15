@@ -1,22 +1,21 @@
-import { getVerifyingContract, ILimitOrderData, LimitOrder } from "limitorderv2-sdk";
+import { getBentoContract, getVerifyingContract, ILimitOrderData, LimitOrder } from "limitorderv2-sdk";
 import { ILimitOrder, IWatchPair } from "../models/models";
 import { utils, Contract, providers, BigNumber } from 'ethers';
 import stopLimitOrderABI from '../abis/stopLimitOrder';
-import { useWss } from "../price-updates/pair-updates";
+import bentoBox from "../abis/bentoBox";
+import { MyProvider } from "../utils/provider";
 
 // This is called just before we try to execute orders
 // Check if the order is (still) valid
 // & update the order status in the database ** (move this to another function potentially)
-export async function validOrders(orders: ILimitOrder[], database): Promise<ILimitOrder[]> {
+export async function refreshOrderStatus(orders: ILimitOrder[], database): Promise<ILimitOrder[]> {
 
-  const invalidOrders = [];
   const validOrders = [];
 
-  const provider = useWss() ?
-    new providers.WebSocketProvider(process.env.WEBSOCKET_JSON_RPC) :
-    new providers.JsonRpcProvider(process.env.HTTP_JSON_RPC);
+  const provider = MyProvider.Instance.provider;
 
-  let stopLimitOrderContract = new Contract(getVerifyingContract(+process.env.CHAINID), stopLimitOrderABI, provider);
+  const stopLimitOrderContract = new Contract(getVerifyingContract(+process.env.CHAINID), stopLimitOrderABI, provider);
+  const bentoBoxContract = new Contract(getBentoContract(+process.env.CHAINID), bentoBox, provider);
 
   await Promise.all(orders.map(async (order) => {
 
@@ -25,24 +24,17 @@ export async function validOrders(orders: ILimitOrder[], database): Promise<ILim
     const { filled, filledAmount } = await isFilled(limitOrder, stopLimitOrderContract);
 
     order.filledAmount = filledAmount.toString();
+    order.userBalance = (await bentoBoxContract.balanceOf(limitOrder.tokenInAddress, limitOrder.maker)).toString();
 
     const canceled = await isCanceled(limitOrder, stopLimitOrderContract);
     const expired = isExpired(limitOrder);
     const live = isLive(limitOrder);
 
-    if (filled || canceled || expired || !live) {
-      if (!live) {
-        invalidOrders.push(order);
-      }
-    } else {
+    if (!filled && !canceled && !expired && live) {
       validOrders.push(order);
     }
 
-
   }));
-
-  // todo rethink deletion.. There should probably be a seperate service for this
-  // await database.deleteLimitOrders(invalidOrders); // delete the order only if it is expired / filled
 
   return validOrders;
 }
@@ -93,19 +85,17 @@ export function validateLimitOrderData(order: ILimitOrderData, watchPairs: IWatc
 }
 
 function checkSignature(limitOrder: LimitOrder): boolean {
-  let typedData = limitOrder.getTypedData();
-  
-  let v = limitOrder.v;
-  let r = limitOrder.r;
-  let s = limitOrder.s;
 
-  let recoveredAddress = utils.verifyTypedData(
+  const typedData = limitOrder.getTypedData();
+
+  const { v, r, s } = limitOrder;
+
+  const recoveredAddress = utils.verifyTypedData(
     typedData.domain,
     { LimitOrder: typedData.types.LimitOrder },
     typedData.message,
     { v , r, s }
-  )
+  );
 
-  if(recoveredAddress != limitOrder.maker) return false;
-  return true;
+  return recoveredAddress === limitOrder.maker;
 }

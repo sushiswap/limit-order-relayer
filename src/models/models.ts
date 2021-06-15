@@ -1,3 +1,4 @@
+import { BigNumber } from "ethers";
 import { ILimitOrderData } from "limitorderv2-sdk";
 import { Document } from "mongoose";
 
@@ -22,7 +23,8 @@ export interface ILimitOrder {
   digest: string,
   order: ILimitOrderData,
   pairAddress?: string,
-  filledAmount?: string
+  filledAmount?: string,
+  userBalance?: string,
 }
 
 export interface ILimitOrderModel extends ILimitOrder, Document { };

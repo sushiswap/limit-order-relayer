@@ -48,7 +48,7 @@ export const limitOrderModel = new Schema({
     chainId: Number
   },
   pairAddress: String,
-});
+}, { timestamps: true });
 
 export const executedOrderModel = new Schema({
   digest: String,
@@ -72,8 +72,8 @@ export const executedOrderModel = new Schema({
     chainId: Number
   },
   fillAmount: String,
-  txHash: String
-})
+  txHash: String,
+}, { timestamps: true });
 
 watchPairModel.set("collection", `watchpairs_${process.env.CHAINID}`);
 limitOrderModel.set("collection", `limitorders_${process.env.CHAINID}`);

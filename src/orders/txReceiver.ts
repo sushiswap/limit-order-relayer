@@ -1,7 +1,7 @@
 import { BigNumber } from '@ethersproject/bignumber';
 import { ILimitOrderData, SOCKET_URL, LimitOrder } from 'limitorderv2-sdk';
 import { Observable, Subject } from 'rxjs';
-import { filter, map } from 'rxjs/operators';
+import { filter, map, tap } from 'rxjs/operators';
 import { IMessageEvent, w3cwebsocket } from 'websocket';
 import { IWatchPair, ILimitOrder } from '../models/models';
 import { getOrderPrice } from '../utils/price';
@@ -50,7 +50,6 @@ function _watchLimitOrders(watchPairs: IWatchPair[]): Observable<ILimitOrderData
   socket = startSocket(socketUrl, ({ data }: any) => {
 
     const order: ILimitOrderData = JSON.parse(data).limitOrder;
-
     updates.next(order);
 
   });

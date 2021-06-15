@@ -1,12 +1,12 @@
 import { ChainId } from "@sushiswap/sdk";
 import { BigNumber, ethers, providers } from "ethers";
-import { FillLimitOrder, getAdvancedReceiver, getDefaultReceiver, LimitOrder } from "limitorderv2-sdk";
+import { FillLimitOrder, getAdvancedReceiver, LimitOrder } from "limitorderv2-sdk";
 import { IExecutedOrder } from "../models/models";
-import { ExecutableOrder, getGasPrice } from "./profitability";
+import { ExecutableOrder, getGweiGasPrice } from "./profitability";
 import DEFAULT_TOKEN_LIST from '@sushiswap/default-token-list';
-import { _desiredProfitToken } from '../limitOrderConfig/pairs';
-
-// TODO cache to prevent republishing of recent orders ... const executedOrders: { [digest: string]: Date } = {};
+import { _desiredProfitToken } from '../relayer-config/pairs';
+import { MyProvider } from "../utils/provider";
+import { MyLogger } from "../utils/myLogger";
 
 export async function executeOrders(ordersData: ExecutableOrder[]): Promise<IExecutedOrder[]> {
 
@@ -21,12 +21,11 @@ export async function executeOrders(ordersData: ExecutableOrder[]): Promise<IExe
     let amountExternal: BigNumber;
 
     if (keepTokenIn) {
-      amountExternal = executableOrder.minAmountIn.add(1); // 0 slippage
+      const inDiff = executableOrder.inAmount.sub(executableOrder.minAmountIn).div(10);
+      amountExternal = executableOrder.minAmountIn.add(inDiff); // 10% of profit as slippage
     } else {
-      amountExternal = executableOrder.outAmount.sub(1); // 0 slippage
+      amountExternal = executableOrder.outAmount.sub(executableOrder.outDiff.div(10)); // 10% of profit as slippage
     }
-
-    console.log(`keep token in: ${keepTokenIn}, amountExternal: ${amountExternal.toString()}`);
 
     const fillOrder = new FillLimitOrder(
       LimitOrder.getLimitOrder(order),
@@ -38,17 +37,17 @@ export async function executeOrders(ordersData: ExecutableOrder[]): Promise<IExe
       keepTokenIn
     );
 
-    const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, new providers.JsonRpcProvider(process.env.HTTP_JSON_RPC));
+    const wallet = MyProvider.Instance.wallet;
 
-    const gasPrice = await getGasPrice(+process.env.CHAINID);
+    const gasPrice = await getGweiGasPrice(+process.env.CHAINID);
 
-    if (!gasPrice) return console.log('Could not fetch gas prices');
+    if (!gasPrice) return;
 
     const alreadyExecuted = ExecuteHelper.Instance.alreadyExecuted(executableOrder.limitOrderData.digest);
 
     if (!alreadyExecuted) {
 
-      const fillStatus = await fillOrder.fillOrder(wallet, { forceExecution: false, gasPrice: BigNumber.from("1000000000") as any, open: false });
+      const fillStatus = await fillOrder.fillOrder(wallet, { forceExecution: false, gasPrice: gasPrice, open: false });
 
       if (fillStatus.executed) {
 
@@ -56,17 +55,22 @@ export async function executeOrders(ordersData: ExecutableOrder[]): Promise<IExe
           order: executableOrder.limitOrderData.order,
           digest: executableOrder.limitOrderData.digest,
           fillAmount: executableOrder.inAmount.toString(),
-          txHash: fillStatus.transactionHash
+          txHash: fillStatus.transactionHash,
+
         });
 
-        console.log(fillStatus.transactionHash);
+        MyLogger.log(`${fillStatus.transactionHash}, gasPrice: ${gasPrice.toString()}`);
 
       } else {
 
         ExecuteHelper.Instance.remove(executableOrder.limitOrderData.digest);
-        console.log('Gas estimation failed');
+        MyLogger.log("Gas estimation failed");
 
       }
+
+    } else {
+
+      console.log('Order already executing');
 
     }
 
@@ -79,7 +83,7 @@ export class ExecuteHelper {
 
   private executedOrders: Array<{ timestamp: number, digest: string }> = [];
 
-  private timeBuffer = 1000 * 180; // 3 min
+  private timeBuffer = 1000 * 180; // 5 min
 
   public readonly profitTokens: string[];
 
@@ -92,7 +96,9 @@ export class ExecuteHelper {
   protected constructor() {
 
     const tokens = DEFAULT_TOKEN_LIST.tokens.filter(token => token.chainId === +process.env.CHAINID);
+
     this.profitTokens = _desiredProfitToken.map(tokenSymbol => tokens.find(token => token.symbol === tokenSymbol).address).reverse();
+
     if (this.profitTokens.indexOf(undefined) !== -1) console.log(`Error! Couldn't find profit token`);
 
   };
@@ -107,7 +113,7 @@ export class ExecuteHelper {
 
       this.executedOrders.push({
         timestamp: new Date().getTime(),
-        digest
+        digest,
       });
 
     }

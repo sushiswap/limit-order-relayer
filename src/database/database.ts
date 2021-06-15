@@ -73,8 +73,7 @@ export class Database {
 
     const model = new this.LimitOrderModel(limitOrder);
 
-    return model.save().then((a) => console.log(a.price.toString(), 'Limit order saved')).catch(err => {
-      console.log('Failed to save limit order');
+    return model.save().then((a) => console.log('✔ Limit order saved')).catch(err => {
       if (err.code === 11000) {
         console.log('Ignored saving an existing order');
       } else {

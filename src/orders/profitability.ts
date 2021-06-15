@@ -41,6 +41,7 @@ export async function _getProfitableOrders(priceUpdate: PriceUpdate, orders: ILi
   const profitable: ExecutableOrder[] = [];
 
   orders.forEach(orderData => {
+
     // how much of the order can be filled without crossing limit price ? e.g. huge orders will be partially filled because their price impact is too high
     const effects = getOrderEffects(orderData, sellingToken0, priceUpdate, token0EthPrice, token1EthPrice);
 
@@ -55,10 +56,10 @@ export async function _getProfitableOrders(priceUpdate: PriceUpdate, orders: ILi
         newPrice,
         newToken0Amount,
         newToken1Amount,
-        minAmountIn
+        minAmountIn,
       } = effects;
 
-      if (profitGwei.gt(gasPrice.mul("380000"))) { // ~ 100k gas profit
+      if (profitGwei.gt(gasPrice.mul("500000").div(1e9))) { // ~ 100k gas profit
 
         profitable.push({
           limitOrderData: orderData,
@@ -91,14 +92,13 @@ export function sortOrders(orders: ILimitOrder[]) {
 export async function getData(priceUpdate: PriceUpdate, chainId = +process.env.CHAINID): Promise<{ gasPrice?: BigNumber, token0EthPrice?: BigNumber, token1EthPrice?: BigNumber }> {
 
   let [gasPrice, token0EthPrice]: Array<BigNumber | void> = await Promise.all([
-    getGasPrice(chainId),
+    getGweiGasPrice(chainId),
     getToken0EthPrice(chainId, priceUpdate.token0.address)
   ]);
 
   if (priceUpdate.token0.address === process.env.WETH_ADDRESS) token0EthPrice = BigNumber.from("100000000"); // better precision; calculated price is usually off by some %
 
   if (!gasPrice || !token0EthPrice) {
-    console.log("Failed to fetch gas price or token0 price");
     return {};
   }
 
@@ -107,12 +107,17 @@ export async function getData(priceUpdate: PriceUpdate, chainId = +process.env.C
   return { gasPrice, token0EthPrice, token1EthPrice };
 }
 
-export async function getGasPrice(chainId: number) {
+export async function getGweiGasPrice(chainId: number) {
 
   if (chainId === ChainId.MAINNET) {
 
     const gasPrice = await axios(`https://api.etherscan.io/api?module=gastracker&action=gasoracle&apikey=${process.env.ETHERSCAN_API_KEY}`);
-    return !!gasPrice?.data?.result?.FastGasPrice ? BigNumber.from(Math.floor(+gasPrice.data.result.FastGasPrice)) : undefined
+
+    const fastGasPrice = gasPrice?.data?.result?.FastGasPrice;
+
+    if (!fastGasPrice) return;
+
+    return BigNumber.from(Math.floor(+gasPrice.data.result.FastGasPrice * 1e9));
 
   } else if (chainId === ChainId.MATIC) {
 
@@ -124,7 +129,7 @@ export async function getGasPrice(chainId: number) {
 
     const average = (+fastPrice + standardPrice) / 2;
 
-    return BigNumber.from(Math.floor(average));
+    return BigNumber.from(Math.floor(average * 1e9));
 
   }
 }
@@ -166,9 +171,10 @@ export function getOrderEffects(orderData: ILimitOrder, sellingToken0: boolean, 
     sellingToken0 ? priceUpdate.token0.price : priceUpdate.token1.price,
     sellingToken0,
     _inAmount,
-    orderData.filledAmount,
     priceUpdate.token0.poolBalance,
-    priceUpdate.token1.poolBalance
+    priceUpdate.token1.poolBalance,
+    orderData.filledAmount,
+    orderData.userBalance
   );
 
   if (inAmount.eq("0")) return false;
@@ -215,15 +221,19 @@ export function maxMarketSell(
   currentPrice: BigNumber,
   sellingToken0: boolean,
   inAmount: BigNumber,
-  filledAmount: string,
   token0Amount: BigNumber,
-  token1Amount: BigNumber) {
+  token1Amount: BigNumber,
+  filledAmount: string,
+  userBalance?: string) {
+
 
   if (currentPrice.lt(limitPrice)) return { inAmount: BigNumber.from("0") } as any;
 
-  // const userBalance = await bentoBalance(order.order.maker, order.order.tokenIn, provider); todo
-
   inAmount = inAmount.sub(filledAmount);
+
+  if (!!userBalance) {
+    inAmount = inAmount.lt(userBalance) ? inAmount : BigNumber.from(userBalance);
+  }
 
   const marketSell = marketSellOutput(sellingToken0, inAmount, token0Amount, token1Amount);
 

@@ -2,6 +2,7 @@ import { IWatchPair } from "../models/models";
 import { BigNumber, ethers } from "ethers";
 import { Observable, Subject } from 'rxjs';
 import ERC20_ABI from '../abis/erc20';
+import { MyProvider } from "../utils/provider";
 
 export const PRICE_MULTIPLIER = BigNumber.from(1e18.toString());
 
@@ -21,26 +22,22 @@ export interface PriceUpdate {
 
 export function watchSushiwapPairs(watchPairs: IWatchPair[]): Observable<PriceUpdate> {
 
-  const provider = useWss() ?
-    new ethers.providers.WebSocketProvider(process.env.WEBSOCKET_JSON_RPC) :
-    new ethers.providers.JsonRpcProvider(process.env.HTTP_JSON_RPC);
-
+  const provider = MyProvider.Instance.provider;
 
   const updates = new Subject<PriceUpdate>();
-
 
   watchPairs.forEach(async pair => {
 
     updates.next(await fetchPairData(pair, provider)); // do it once at the beginning
 
-    if (useWss()) {
+    if (MyProvider.Instance.usingSocket) {
 
       const filter = {
         address: pair.pairAddress,
         topics: [ethers.utils.id("Swap(address,uint256,uint256,uint256,uint256,address)")]
       };
 
-      provider.on(filter, async () => updates.next(await fetchPairData(pair, provider)));
+      MyProvider.Instance.socketProvider.on(filter, async () => updates.next(await fetchPairData(pair, provider)));
 
     } else {
 

@@ -7,7 +7,6 @@ import { LimitOrderRelayer } from '../src/LimitOrderRelayer';
 import { executeOrders } from '../src/orders/execute';
 import { Database } from '../src/database/database';
 import { expect } from 'chai';
-import { validOrders } from '../src/orders/validOrders';
 import { profitableOrders } from '../src/orders/profitability';
 import { getOrderPriceString } from '../src/utils/price';
 
@@ -52,7 +51,9 @@ const mockLimitOrder: ILimitOrder = {
     tokenIn: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2", // WETH
     tokenOut: "0x6B175474E89094C44Da98b954EedeAC495271d0F", // DAI
     tokenInDecimals: 18,
+    tokenInSymbol: 'abc',
     tokenOutDecimals: 18,
+    tokenOutSymbol: 'abc',
     amountIn: "1000000000000000000", // 1 WETH
     amountOut: "2500000000000000000000", // price is in terms of tokenOut (aka 2500 DAI)
     recipient: '0x80cF9eD9556729A09DCd1E7a58f8401eB44e5525',
