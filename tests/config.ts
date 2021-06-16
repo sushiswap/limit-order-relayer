@@ -7,7 +7,7 @@ describe('Config', () => {
   it('Should fetch addresses', async () => {
     let err;
     try {
-      console.log(await getLimitOrderPairs());
+      await getLimitOrderPairs();
     } catch (e) {
       err = e;
     }
