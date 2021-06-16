@@ -5,7 +5,8 @@
   "main": "dist/src/index.js",
   "scripts": {
     "test": "env TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\" }' mocha -r ts-node/register 'tests/**/*.ts'",
-    "start": "tsc && node dist/index.js"
+    "start": "tsc && node dist/index.js",
+    "start-forever-polygon": "git fetch --all && git reset --hard origin/polygon-deployment && tsc && forever stop limitorder-relayer-polygon-v1 && forever start forever/polygon.json"
   },
   "keywords": [],
   "author": "",
