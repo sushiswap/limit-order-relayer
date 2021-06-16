@@ -3,6 +3,7 @@ import { executedOrderModel, limitOrderModel, watchPairModel } from "../models/m
 import { IExecutedOrder, IExecutedOrderModel, ILimitOrder, ILimitOrderModel, IWatchPair, IWatchPairModel } from "../models/models";
 import { getLimitOrderPairs } from "../utils/watchPairs";
 import { BigNumber } from "@ethersproject/bignumber";
+import { MyLogger } from "../utils/myLogger";
 
 export class Database {
 
@@ -73,7 +74,7 @@ export class Database {
 
     const model = new this.LimitOrderModel(limitOrder);
 
-    return model.save().then((a) => console.log('✔ Limit order saved')).catch(err => {
+    return model.save().then(() => MyLogger.log('✔ Limit order saved')).catch(err => {
       if (err.code === 11000) {
         console.log('Ignored saving an existing order');
       } else {
