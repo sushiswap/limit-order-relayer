@@ -11,7 +11,6 @@ describe('Config', () => {
     } catch (e) {
       err = e;
     }
-    console.log(err);
     expect(err).to.be.undefined;
   });
 });
