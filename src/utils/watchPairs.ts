@@ -32,7 +32,7 @@ export const getLimitOrderPairs = async (): Promise<IWatchPair[]> => {
       });
 
     } else {
-      console.log(`Error! Couldn't find token ${token0 ? token1Symbol : token0Symbol}`);
+      throw new Error(`Error! Couldn't find token ${token0 ? token1Symbol : token0Symbol}`);
     }
 
   });
