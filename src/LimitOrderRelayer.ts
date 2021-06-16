@@ -1,12 +1,9 @@
 import { Database } from './database/database';
 import { IExecutedOrder, ILimitOrder, IWatchPair } from './models/models';
-import { PriceUpdate, watchSushiwapPairs } from './price-updates/pair-updates';
-import { watchLimitOrders, stopReceivingOrders } from './orders/txReceiver';
+import { PriceUpdate } from './price-updates/pair-updates';
 import { refreshOrderStatus } from './orders/validOrders';
 import { ExecutableOrder, profitableOrders } from './orders/profitability';
-import { executeOrders } from './orders/execute';
 import { Observable, Subject } from 'rxjs';
-import { watchPairModel } from './models/mongooseModels';
 
 export class LimitOrderRelayer {
 
@@ -17,7 +14,6 @@ export class LimitOrderRelayer {
   public database: Database;
 
 
-  private _executeOrders = new Subject<ExecutableOrder[]>();
 
 
   constructor(orderUpdates, pairUpdates, database, executeOrders) {
@@ -29,7 +25,9 @@ export class LimitOrderRelayer {
 
   }
 
-  // for logging purposes  
+  // for testing purposes
+  private _executeOrders = new Subject<ExecutableOrder[]>();
+
   public get submittedOrders(): Observable<ExecutableOrder[]> {
     return this._executeOrders.asObservable();
   }
@@ -37,13 +35,10 @@ export class LimitOrderRelayer {
 
   public async init() {
 
-
     await this.database.connectDB();
-
 
     // which pairs we execute limit orders for
     const watchPairs = await this.database.setWatchPairs();
-
 
     if (!watchPairs || watchPairs.length == 0) return console.log('No pairs to watch');
 
@@ -62,8 +57,8 @@ export class LimitOrderRelayer {
       const __token1Orders = await this.database.getLimitOrders(priceUpdate.token1.price, priceUpdate.pair.pairAddress, priceUpdate.token1.address);
 
       // filter out expired / already filled orders
-      const _token0Orders = await refreshOrderStatus(__token0Orders, this.database);
-      const _token1Orders = await refreshOrderStatus(__token1Orders, this.database);
+      const _token0Orders = await refreshOrderStatus(__token0Orders);
+      const _token1Orders = await refreshOrderStatus(__token1Orders);
 
       // filter out orders that aren't profitable
       const token0Orders = await profitableOrders(priceUpdate, _token0Orders);

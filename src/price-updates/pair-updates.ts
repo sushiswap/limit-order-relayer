@@ -41,7 +41,7 @@ export function watchSushiwapPairs(watchPairs: IWatchPair[]): Observable<PriceUp
 
     } else {
 
-      setInterval(async () => updates.next(await fetchPairData(pair, provider)), 60000); // each minute
+      setInterval(async () => updates.next(await fetchPairData(pair, provider)), 180000); // every 3 min
 
     }
 

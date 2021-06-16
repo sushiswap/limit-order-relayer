@@ -25,7 +25,7 @@ export class Database {
 
       const uri = process.env.MONGODB_URL;
 
-      if (this.database) return reject();
+      if (this.database) return resolve();
 
       Mongoose.connect(uri, {
         useNewUrlParser: true,
@@ -53,7 +53,11 @@ export class Database {
   }
 
   protected async dropPairs() {
-    await this.WatchPairModel.deleteMany({});
+    await this.WatchPairModel.deleteMany({}).exec();
+  }
+
+  public async saveLimitOrders(limitOrders: ILimitOrder[]): Promise<(ILimitOrder | void)[]> {
+    return Promise.all(limitOrders.map(order => this.saveLimitOrder(order)));
   }
 
   public saveWatchPairs(watchPairs: IWatchPair[]): Promise<IWatchPair[] | void> {
@@ -91,12 +95,12 @@ export class Database {
     return orders.filter(o => BigNumber.from(o.price).lt(price));
   }
 
-  public async updateLimitOrders(orders: ILimitOrder[]): Promise<UpdateWriteOpResult[]> {
-    return Promise.all(orders.map(order => this.LimitOrderModel.updateOne({ digest: order.digest }, order).exec())); // TODO test this
+  public async getAllLimitOrders(): Promise<ILimitOrder[]> {
+    return this.LimitOrderModel.find({});
   }
 
-  public async deleteLimitOrders(orders: ILimitOrder[]): Promise<{ ok?: number }[]> {
-    return Promise.all(orders.map(order => this.LimitOrderModel.deleteOne({ digest: order.digest }).exec())); // TODO test
+  public async deleteLimitOrders(orders: ILimitOrder[]): Promise<{ ok?: number, deletedCount?: number }> {
+    return this.LimitOrderModel.deleteMany({ digest: { $in: orders.map(order => order.digest) } }).exec();
   }
 
   public async saveExecutedOrder(orders: IExecutedOrder[]): Promise<IExecutedOrder[]> {

@@ -10,6 +10,8 @@ dotenv.config();
 
 validateEnv();
 
-new LimitOrderRelayer(watchLimitOrders, watchSushiwapPairs, Database.Instance, executeOrders).init();
+const relayer = new LimitOrderRelayer(watchLimitOrders, watchSushiwapPairs, Database.Instance, executeOrders);
+
+relayer.init();
 
 process.on('exit', () => { stopReceivingOrders(); Database.Instance.disconnectDB(); });

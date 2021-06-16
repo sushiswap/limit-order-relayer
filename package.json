@@ -6,6 +6,7 @@
   "scripts": {
     "test": "env TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\" }' mocha -r ts-node/register 'tests/**/*.ts'",
     "start": "tsc && node dist/index.js",
+    "copy-remote": "tsc && node dist/database/copy-remote.js",
     "forever-polygon": "git fetch --all && git reset --hard origin/polygon-deployment && true > error.log && true > out.log && tsc && forever start forever/polygon.json"
   },
   "keywords": [],
@@ -18,7 +19,7 @@
     "axios": "^0.21.1",
     "dotenv": "^9.0.0",
     "ethers": "^5.1.4",
-    "limitorderv2-sdk": "^0.1.47",
+    "limitorderv2-sdk": "^0.1.49",
     "mongoose": "^5.12.7",
     "mongoose-long": "^0.3.2",
     "rxjs": "^7.0.0",

@@ -4,13 +4,17 @@ import { utils, Contract, providers, BigNumber } from 'ethers';
 import stopLimitOrderABI from '../abis/stopLimitOrder';
 import bentoBox from "../abis/bentoBox";
 import { MyProvider } from "../utils/provider";
+import { Database } from "../database/database";
 
 // This is called just before we try to execute orders
 // Check if the order is (still) valid
 // & update the order status in the database ** (move this to another function potentially)
-export async function refreshOrderStatus(orders: ILimitOrder[], database): Promise<ILimitOrder[]> {
+export async function refreshOrderStatus(orders: ILimitOrder[], fetchUserBalance = true): Promise<ILimitOrder[]> {
+
+  if (orders.length === 0) return [];
 
   const validOrders = [];
+  const invalidOrders = [];
 
   const provider = MyProvider.Instance.provider;
 
@@ -24,7 +28,10 @@ export async function refreshOrderStatus(orders: ILimitOrder[], database): Promi
     const { filled, filledAmount } = await isFilled(limitOrder, stopLimitOrderContract);
 
     order.filledAmount = filledAmount.toString();
-    order.userBalance = (await bentoBoxContract.balanceOf(limitOrder.tokenInAddress, limitOrder.maker)).toString();
+
+    if (fetchUserBalance) {
+      order.userBalance = (await bentoBoxContract.balanceOf(limitOrder.tokenInAddress, limitOrder.maker)).toString();
+    }
 
     const canceled = await isCanceled(limitOrder, stopLimitOrderContract);
     const expired = isExpired(limitOrder);
@@ -32,18 +39,23 @@ export async function refreshOrderStatus(orders: ILimitOrder[], database): Promi
 
     if (!filled && !canceled && !expired && live) {
       validOrders.push(order);
+    } else {
+      invalidOrders.push(order);
     }
 
   }));
 
+  if (invalidOrders.length > 0) Database.Instance.deleteLimitOrders(invalidOrders).then(info => console.log(`Deleted ${info.deletedCount} orders`));
+
   return validOrders;
 }
+
 
 export async function isFilled(limitOrder: LimitOrder, stopLimitOrderContract: Contract): Promise<{ filled: boolean, filledAmount: BigNumber }> {
 
   const orderStatus = await stopLimitOrderContract.orderStatus(limitOrder.getTypeHash());
 
-  return { filled: orderStatus.toString() === limitOrder.amountOutRaw, filledAmount: BigNumber.from(orderStatus) }
+  return { filled: orderStatus.toString() === limitOrder.amountInRaw, filledAmount: BigNumber.from(orderStatus) }
 
 }
 

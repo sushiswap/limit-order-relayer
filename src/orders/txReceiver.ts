@@ -75,4 +75,4 @@ export function watchLimitOrders(watchPairs: IWatchPair[], sub = _watchLimitOrde
     }));
 }
 
-export function stopReceivingOrders() { socket.close() };
+export function stopReceivingOrders() { socket?.close() };
