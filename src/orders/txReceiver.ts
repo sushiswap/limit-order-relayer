@@ -29,11 +29,12 @@ function startSocket(url: string, onMessage: (m: IMessageEvent) => void): w3cweb
 
 const onError = (e) => console.log('SOCKET ERROR ', e);
 
-const onClose = () => undefined;
+const onClose = () => console.log('Socket closed');
 
 const onOpen = () => {
   clearInterval(intervalPointer);
   intervalPointer = setInterval(heartbeat, 3000);
+  console.log('Connecting to the Sushi Relayer service');
 };
 
 const heartbeat = async () => {

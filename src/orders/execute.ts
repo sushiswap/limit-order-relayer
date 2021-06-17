@@ -2,11 +2,12 @@ import { ChainId } from "@sushiswap/sdk";
 import { BigNumber, ethers, providers } from "ethers";
 import { FillLimitOrder, getAdvancedReceiver, LimitOrder } from "limitorderv2-sdk";
 import { IExecutedOrder } from "../models/models";
-import { ExecutableOrder, getGweiGasPrice } from "./profitability";
+import { ExecutableOrder } from "./profitability";
 import DEFAULT_TOKEN_LIST from '@sushiswap/default-token-list';
 import { _desiredProfitToken } from '../relayer-config/pairs';
 import { MyProvider } from "../utils/provider";
 import { MyLogger } from "../utils/myLogger";
+import { getGweiGasPrice } from "../utils/network";
 
 export async function executeOrders(ordersData: ExecutableOrder[]): Promise<IExecutedOrder[]> {
 
@@ -59,7 +60,7 @@ export async function executeOrders(ordersData: ExecutableOrder[]): Promise<IExe
 
         });
 
-        MyLogger.log(`${fillStatus.transactionHash}, gasPrice: ${gasPrice.toString()}`);
+        MyLogger.log(`${fillStatus.transactionHash}, gasPrice: ${parseFloat(gasPrice.div(1e8).toString()) / 10}`);
 
       } else {
 

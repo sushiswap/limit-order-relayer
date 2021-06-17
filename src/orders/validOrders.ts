@@ -1,10 +1,11 @@
 import { getBentoContract, getVerifyingContract, ILimitOrderData, LimitOrder } from "limitorderv2-sdk";
 import { ILimitOrder, IWatchPair } from "../models/models";
-import { utils, Contract, providers, BigNumber } from 'ethers';
+import { utils, Contract, BigNumber } from 'ethers';
 import stopLimitOrderABI from '../abis/stopLimitOrder';
 import bentoBox from "../abis/bentoBox";
 import { MyProvider } from "../utils/provider";
 import { Database } from "../database/database";
+import { MyLogger } from "../utils/myLogger";
 
 // This is called just before we try to execute orders
 // Check if the order is (still) valid
@@ -25,15 +26,19 @@ export async function refreshOrderStatus(orders: ILimitOrder[], fetchUserBalance
 
     const limitOrder = LimitOrder.getLimitOrder(order.order);
 
-    const { filled, filledAmount } = await isFilled(limitOrder, stopLimitOrderContract);
+    const { filled, filledAmount } = await isFilled(limitOrder, stopLimitOrderContract).catch(() => MyLogger.log(`Couldn't fetch order fill status`));
+    const canceled = await isCanceled(limitOrder, stopLimitOrderContract).catch(() => MyLogger.log(`Couldn't fetch order cancelation status`));
+
+    if (filled === undefined || canceled === undefined) return;
+
+    if (fetchUserBalance) {
+      const balance = await getUserBalance(limitOrder.tokenInAddress, limitOrder.maker, bentoBoxContract).catch(e => MyLogger.log(`Couldn't fetch bento balance`));
+      if (!balance) return;
+      order.userBalance = balance.toString();
+    }
 
     order.filledAmount = filledAmount.toString();
 
-    if (fetchUserBalance) {
-      order.userBalance = (await bentoBoxContract.balanceOf(limitOrder.tokenInAddress, limitOrder.maker)).toString();
-    }
-
-    const canceled = await isCanceled(limitOrder, stopLimitOrderContract);
     const expired = isExpired(limitOrder);
     const live = isLive(limitOrder);
 
@@ -45,11 +50,14 @@ export async function refreshOrderStatus(orders: ILimitOrder[], fetchUserBalance
 
   }));
 
-  if (invalidOrders.length > 0) Database.Instance.deleteLimitOrders(invalidOrders).then(info => console.log(`Deleted ${info.deletedCount} orders`));
+  if (invalidOrders.length > 0) Database.Instance.deleteLimitOrders(invalidOrders).then(info => MyLogger.log(`Deleted ${info.deletedCount} orders`));
 
   return validOrders;
 }
 
+export async function getUserBalance(tokenIn, maker, bentoBoxContract: Contract) {
+  return bentoBoxContract.balanceOf(tokenIn, maker);
+}
 
 export async function isFilled(limitOrder: LimitOrder, stopLimitOrderContract: Contract): Promise<{ filled: boolean, filledAmount: BigNumber }> {
 

@@ -9,8 +9,6 @@ export function validateEnv() {
 
   if (!process.env.HTTP_JSON_RPC) throw new Error("HTTP_JSON_RPC missing from env")
 
-  // if (!process.env.USE_WSS) throw new Error("USE_WSS missing from env")
-
   // if (!process.env.ETHERSCAN_API_KEY) throw new Error("ETHERSCAN_API_KEY missing from env")
 
   if (!process.env.WETH_ADDRESS) throw new Error("WETH_ADDRESS missing from env")

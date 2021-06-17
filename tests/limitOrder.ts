@@ -7,81 +7,100 @@ import { LimitOrderRelayer } from '../src/LimitOrderRelayer';
 import { executeOrders } from '../src/orders/execute';
 import { Database } from '../src/database/database';
 import { expect } from 'chai';
-import { profitableOrders } from '../src/orders/profitability';
-import { getOrderPriceString } from '../src/utils/price';
 
 describe('LimitOrderTest', () => {
-  it('Executing Limit Order', async () => {
+  it('Executing 2 Limit Orders', async () => {
 
-    const limitOrder = new LimitOrderRelayer(mockLimitOrderWatcher, mockPairwatcher, MockDatabase.Instance, executeOrders);
+    const limitOrderRelayer = new LimitOrderRelayer(
+      mockLimitOrderWatcher,
+      mockPairwatcher,
+      executeOrders,
+      mockOrderStatusRefresh,
+      MockDatabase.Instance
+    );
 
-    let orders: ILimitOrder[];
+    const received = await new Promise<any>((resolve, reject) => {
 
-    orders = await limitOrder.database.getLimitOrders(mockPriceUpdate.token1.price, mockPriceUpdate.pair.pairAddress, mockLimitOrder.order.tokenIn);
+      limitOrderRelayer.submittedOrders.subscribe({
+        next: resolve,
+        error: reject
+      });
 
-    expect(orders[0]).to.equal(mockLimitOrder, "order was not fetched from DB");
+      limitOrderRelayer.init();
 
-    // orders = await validOrders(orders, limitOrder.database);
+    });
 
-    // expect(orders[0]).to.equal(mockLimitOrder, "order was filtered out");
+    expect(received.length).to.be.eq(2, "Didn't execute both orders")
 
-    // orders = await profitableOrders(mockPriceUpdate, orders);
-
-    // expect(orders[0]).to.equal(mockLimitOrder, "order wasn't executed");
-
-    /*     let success = false;
-    
-        limitOrder.submittedOrders.subscribe(orders => {
-          if (orders.length > 0) success = true;
-        });
-    
-        limitOrder.init();
-    
-        await new Promise((r) => setTimeout(r, 1000));
-    
-        expect(success).to.be.true("Order was not executed"); */
-
-  }).timeout(4000);
+  }).timeout(20000);
 });
 
-const mockLimitOrder: ILimitOrder = {
-  digest: "0x64877b8800176d7075d010deacc25e3b5baedcabb0064f0f70287127a5ad1a51",
-  order: {
-    maker: "0x80cF9eD9556729A09DCd1E7a58f8401eB44e5525",
-    tokenIn: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2", // WETH
-    tokenOut: "0x6B175474E89094C44Da98b954EedeAC495271d0F", // DAI
-    tokenInDecimals: 18,
-    tokenInSymbol: 'abc',
-    tokenOutDecimals: 18,
-    tokenOutSymbol: 'abc',
-    amountIn: "1000000000000000000", // 1 WETH
-    amountOut: "2500000000000000000000", // price is in terms of tokenOut (aka 2500 DAI)
-    recipient: '0x80cF9eD9556729A09DCd1E7a58f8401eB44e5525',
-    startTime: 0,
-    endTime: 2000000000000,
-    stopPrice: '0',
-    oracleAddress: '0x0000000000000000000000000000000000000000',
-    oracleData: '0x00000000000000000000000000000000000000000000000000000000000000',
-    v: 27,
-    r: '0xb329d28a2d8789b7381cbe307dc687ea46f3dad763bde94b6814820617fbbb49',
-    s: '0x74f47425d7dc35021016089c723e6cb09e874a45cc6d74f23dd4d15cc20b705c',
-    chainId: 1
+const twoProfitableOrders: ILimitOrder[] = [
+  {
+    order: {
+      maker: '0x0Cc7090D567f902F50cB5621a7d6A59874364bA1',
+      tokenIn: '0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619',
+      tokenOut: '0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270',
+      tokenInDecimals: 18,
+      tokenOutDecimals: 18,
+      tokenInSymbol: 'WETH',
+      tokenOutSymbol: 'MATIC',
+      amountIn: '50000000000000000',
+      amountOut: '75050000000000000000',
+      recipient: '0x0Cc7090D567f902F50cB5621a7d6A59874364bA1',
+      startTime: 0,
+      endTime: 1624042839,
+      stopPrice: '0',
+      oracleAddress: '0x0000000000000000000000000000000000000000',
+      oracleData: '0x00000000000000000000000000000000000000000000000000000000000000',
+      v: 28,
+      r: '0x99b49756a14f944d6f6359ce8767edba48fc69c824eb131ee2d85c3278d668c0',
+      s: '0x0c0f45fb8e44fca2982601d6b47b2fbd5f6726f539f4d2393dcd482f0e05ea19',
+      chainId: 137
+    },
+    price: '1505516549648946840521',
+    digest: '0x46dd48973b42d35c872cbf569bae8213ea5fba300b172c0ab1dc7064a6678a4c',
+    pairAddress: '0xc4e595acDD7d12feC385E5dA5D43160e8A0bAC0E',
   },
-  price: getOrderPriceString("1000000000000000000", "2500000000000000000000"),
-  pairAddress: "0xC3D03e4F041Fd4cD388c549Ee2A29a9E5075882f"
-};
+  {
+    order: {
+      maker: '0x0Cc7090D567f902F50cB5621a7d6A59874364bA1',
+      tokenIn: '0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619',
+      tokenOut: '0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270',
+      tokenInDecimals: 18,
+      tokenOutDecimals: 18,
+      tokenInSymbol: 'WETH',
+      tokenOutSymbol: 'MATIC',
+      amountIn: '50000000000000000',
+      amountOut: '75100000000000000000',
+      recipient: '0x0Cc7090D567f902F50cB5621a7d6A59874364bA1',
+      startTime: 0,
+      endTime: 2624042847,
+      stopPrice: '0',
+      oracleAddress: '0x0000000000000000000000000000000000000000',
+      oracleData: '0x00000000000000000000000000000000000000000000000000000000000000',
+      v: 27,
+      r: '0xc8704f13d59bb8f3b57fbef04a2db3b1918c2eba10f5136a6088e0b95a3b3e37',
+      s: '0x099578119c9f555d7c2d57092ad55540896ecee06773c9703392e22a2d3d25bf',
+      chainId: 137
+    },
+    price: '1506519558676028084252',
+    digest: '0x40fda8d0104644f51ad231485f9864e5fdf443f49ff0cdd5354fbb51feed9750',
+    pairAddress: '0xc4e595acDD7d12feC385E5dA5D43160e8A0bAC0E',
+  }
+];
 
-const daiBalance = BigNumber.from("123897604486763299470868769"); // 123 m
-const wethBalance = BigNumber.from("45251174156508396022079"); // 45 k ~ price is 2733 DAI per WETH
+const wmaticBalance = BigNumber.from("29251199619224541435352689");
+const wethBalance = BigNumber.from("18243857044724546396431");
 
 const mockWatchPair = {
   token0: {
-    address: "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+    address: "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270",
     decimals: 18,
-    symbol: "DAI"
+    symbol: "WMATIC"
   },
   token1: {
-    address: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+    address: "0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619",
     decimals: 18,
     symbol: "WETH"
   },
@@ -91,36 +110,43 @@ const mockWatchPair = {
 const mockPriceUpdate: PriceUpdate = {
   pair: mockWatchPair,
   token0: {
-    poolBalance: daiBalance,
-    price: wethBalance.mul(PRICE_MULTIPLIER).div(daiBalance), // price is calculated as (token1Balance * {PRICE_MULTIPLIER}) / token0Balance
-    address: "0x6B175474E89094C44Da98b954EedeAC495271d0F"
+    poolBalance: wmaticBalance,
+    price: wethBalance.mul(PRICE_MULTIPLIER).div(wmaticBalance), // price is calculated as (token1Balance * {PRICE_MULTIPLIER}) / token0Balance
+    address: "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270"
   },
   token1: {
     poolBalance: wethBalance,
-    price: daiBalance.mul(PRICE_MULTIPLIER).div(wethBalance), // price is calculated as (token0Balance * {PRICE_MULTIPLIER}) / token1Balance
-    address: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+    price: wmaticBalance.mul(PRICE_MULTIPLIER).div(wethBalance), // price is calculated as (token0Balance * {PRICE_MULTIPLIER}) / token1Balance
+    address: "0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619"
   }
 }
 
+const mockPromise = (a?) => new Promise<any>((r, re) => r(a));
+
 function mockLimitOrderWatcher(): Observable<ILimitOrder> {
-  return of(mockLimitOrder);
+  return of(undefined);
 }
 
 function mockPairwatcher(): Observable<PriceUpdate> {
   return of(mockPriceUpdate);
 }
 
+function mockOrderStatusRefresh(orders: ILimitOrder[]) {
+  return mockPromise(orders.map(order => { order.filledAmount = "0"; return order }));
+}
+
 class MockDatabase extends Database {
-  private mockPromise = (a?) => new Promise<any>((r, re) => r(a));
   private static __instance: MockDatabase;
   public static get Instance() { return this.__instance || (this.__instance = new this()); }
-  connectDB = () => { return this.mockPromise(true) };
-  dropPairs = () => { return this.mockPromise(true) };
+  connectDB = () => { return mockPromise(true) };
+  setWatchPairs = () => { return mockPromise([undefined]) };
+  dropPairs = () => { return mockPromise(true) };
   saveWatchPairs = (wp) => { return getLimitOrderPairs() };
-  saveLimitOrder = (lo) => { return this.mockPromise(lo) };
+  saveLimitOrder = (lo) => { return mockPromise(lo) };
+  saveExecutedOrder = (eo) => { return mockPromise(eo) };
   getLimitOrders = (price: BigNumber, pairAddress: string, token0: string) => {
-    return this.mockPromise(mockLimitOrder.order.tokenIn == token0 ? [mockLimitOrder] : []);
+    return mockPromise(token0 === twoProfitableOrders[0].order.tokenIn ? twoProfitableOrders : [])
   };
-  updateLimitOrders = (o) => { return this.mockPromise([]) }
-  deleteLimitOrders = (o) => { return this.mockPromise([]) }
+  updateLimitOrders = (o) => { return mockPromise([]) }
+  deleteLimitOrders = (o) => { return mockPromise([]) }
 }

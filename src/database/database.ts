@@ -92,7 +92,7 @@ export class Database {
   public async getLimitOrders(price: BigNumber, pairAddress: string, tokenIn: string): Promise<ILimitOrder[]> {
     const currentTime = Math.floor(new Date().getTime() / 1000);
     const orders: ILimitOrder[] = await this.LimitOrderModel.find({ pairAddress, 'order.tokenIn': tokenIn, 'order.startTime': { $lt: currentTime }, 'order.endTime': { $gt: currentTime } }).exec();
-    return orders.filter(o => BigNumber.from(o.price).lt(price));
+    return orders;
   }
 
   public async getAllLimitOrders(): Promise<ILimitOrder[]> {

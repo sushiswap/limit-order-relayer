@@ -2,8 +2,9 @@ import { BigNumber } from '@ethersproject/bignumber';
 import { ChainId } from '@sushiswap/sdk';
 import { expect } from 'chai';
 import { ILimitOrder } from '../src/models/models';
-import { maxMarketSell, getOrderEffects, getData, sortOrders, marketSellOutput, getAmountOut, profitableOrders } from '../src/orders/profitability';
+import { maxMarketSell, getOrderEffects, sortOrders, marketSellOutput, getAmountOut, profitableOrders } from '../src/orders/profitability';
 import { PriceUpdate, PRICE_MULTIPLIER } from '../src/price-updates/pair-updates';
+import { getData } from '../src/utils/network';
 import { getOrderPrice, getOrderPriceString, getMinRate } from '../src/utils/price';
 
 const daiBalance = BigNumber.from("102817581502091247236234371"); // 102 m

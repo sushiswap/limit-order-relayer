@@ -5,13 +5,18 @@ import { executeOrders } from './orders/execute';
 import { LimitOrderRelayer } from './LimitOrderRelayer';
 import dotenv from 'dotenv';
 import { validateEnv } from './utils/validateEnv';
+import { refreshOrderStatus } from './orders/validOrders';
 
 dotenv.config();
 
 validateEnv();
 
-const relayer = new LimitOrderRelayer(watchLimitOrders, watchSushiwapPairs, Database.Instance, executeOrders);
-
-relayer.init();
+new LimitOrderRelayer(
+  watchLimitOrders,
+  watchSushiwapPairs,
+  executeOrders,
+  refreshOrderStatus,
+  Database.Instance
+).init();
 
 process.on('exit', () => { stopReceivingOrders(); Database.Instance.disconnectDB(); });

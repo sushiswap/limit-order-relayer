@@ -1,9 +1,9 @@
 import { BigNumber } from "@ethersproject/bignumber";
 import { ILimitOrder } from "../models/models";
 import { PriceUpdate, PRICE_MULTIPLIER } from "../price-updates/pair-updates";
-import axios from 'axios';
+import { getData } from "../utils/network";
 import { getMinRate } from "../utils/price";
-import { ChainId } from "@sushiswap/sdk";
+
 
 export interface ExecutableOrder {
   limitOrderData: ILimitOrder,
@@ -26,7 +26,7 @@ export async function profitableOrders(priceUpdate: PriceUpdate, orders: ILimitO
 
   const sellingToken0 = orders[0].order.tokenIn === priceUpdate.token0.address;
 
-  const { gasPrice, token0EthPrice, token1EthPrice } = await data(priceUpdate); // eth prices are multiplied by 1e9
+  const { gasPrice, token0EthPrice, token1EthPrice } = await data(priceUpdate); // note: eth prices are multiplied by 1e9
 
   if (!gasPrice || !token0EthPrice || !token1EthPrice) return [];
 
@@ -72,8 +72,9 @@ export async function _getProfitableOrders(priceUpdate: PriceUpdate, orders: ILi
 
         priceUpdate.token0.poolBalance = newToken0Amount;
         priceUpdate.token1.poolBalance = newToken1Amount;
-        priceUpdate.token0.price = priceUpdate.token1.poolBalance.div(priceUpdate.token0.poolBalance);
-        priceUpdate.token1.price = priceUpdate.token0.poolBalance.div(priceUpdate.token1.poolBalance);
+        priceUpdate.token0.price = priceUpdate.token1.poolBalance.mul(PRICE_MULTIPLIER).div(priceUpdate.token0.poolBalance);
+        priceUpdate.token1.price = priceUpdate.token0.poolBalance.mul(PRICE_MULTIPLIER).div(priceUpdate.token1.poolBalance);
+
 
       }
 
@@ -89,74 +90,10 @@ export function sortOrders(orders: ILimitOrder[]) {
   return orders.sort((a, b) => BigNumber.from(a.price.toString()).sub(BigNumber.from(b.price.toString())).lt(0) ? -1 : 1);
 }
 
-export async function getData(priceUpdate: PriceUpdate, chainId = +process.env.CHAINID): Promise<{ gasPrice?: BigNumber, token0EthPrice?: BigNumber, token1EthPrice?: BigNumber }> {
-
-  let [gasPrice, token0EthPrice]: Array<BigNumber | void> = await Promise.all([
-    getGweiGasPrice(chainId),
-    getToken0EthPrice(chainId, priceUpdate.token0.address)
-  ]);
-
-  if (priceUpdate.token0.address === process.env.WETH_ADDRESS) token0EthPrice = BigNumber.from("100000000"); // better precision; calculated price is usually off by some %
-
-  if (!gasPrice || !token0EthPrice) {
-    return {};
-  }
-
-  const token1EthPrice = token0EthPrice.mul(priceUpdate.token1.price).div(PRICE_MULTIPLIER);
-
-  return { gasPrice, token0EthPrice, token1EthPrice };
-}
-
-export async function getGweiGasPrice(chainId: number) {
-
-  if (chainId === ChainId.MAINNET) {
-
-    const gasPrice = await axios(`https://api.etherscan.io/api?module=gastracker&action=gasoracle&apikey=${process.env.ETHERSCAN_API_KEY}`);
-
-    const fastGasPrice = gasPrice?.data?.result?.FastGasPrice;
-
-    if (!fastGasPrice) return;
-
-    return BigNumber.from(Math.floor(+gasPrice.data.result.FastGasPrice * 1e9));
-
-  } else if (chainId === ChainId.MATIC) {
-
-    const gasPrice = await axios('https://gasstation-mainnet.matic.network');
-
-    const standardPrice = gasPrice?.data.standard;
-
-    if (!standardPrice) return;
-
-    return BigNumber.from(Math.floor(standardPrice * 1e9));
-
-  }
-}
-
-// return price of token0 in terms of "WETH" or whichever coin the network fees are paid in (padded by 1e8)
-async function getToken0EthPrice(chainId: number, tokenAddress: string) {
-
-  if (chainId == ChainId.MAINNET) {
-
-    const token0EthPrice = await axios(`https://api.coingecko.com/api/v3/coins/ethereum/contract/${tokenAddress}`);
-
-    if (!token0EthPrice?.data?.market_data?.current_price?.eth) return;
-
-    return BigNumber.from(Math.floor(token0EthPrice.data?.market_data?.current_price?.eth * 1e8));
-
-  } else if (chainId === ChainId.MATIC) {
-
-    const [token0USDPrice, maticPrice] = await Promise.all([
-      axios(`https://api.coingecko.com/api/v3/coins/polygon-pos/contract/${tokenAddress}`),
-      axios(`https://api.coingecko.com/api/v3/coins/matic-network?localization=false&tickers=false&market_data=true&community_data=false&developer_data=false&sparkline=false`)
-    ]);
-
-    if (!token0USDPrice?.data?.market_data?.current_price.usd || !maticPrice?.data?.market_data?.current_price.usd) return;
-
-    return BigNumber.from(Math.floor(token0USDPrice?.data?.market_data?.current_price.usd * 1e8 / maticPrice?.data?.market_data?.current_price.usd));
-
-  }
-}
-
+/**
+ * Calculate the effects of optimally executing the order.
+ * Calculate the correct fill amount, the profit amount, new pool balances...
+ */
 export function getOrderEffects(orderData: ILimitOrder, sellingToken0: boolean, priceUpdate: PriceUpdate, token0EthPrice: BigNumber, token1EthPrice: BigNumber):
   false | { partialFill: BigNumber, inAmount: BigNumber, outAmount: BigNumber, outDiff: BigNumber, minAmountIn: BigNumber, profitGwei: BigNumber, newPrice: BigNumber, newToken0Amount: BigNumber, newToken1Amount: BigNumber } {
 
@@ -193,7 +130,7 @@ export function getOrderEffects(orderData: ILimitOrder, sellingToken0: boolean, 
   } else {
 
     // eth price is already 1e8 padded
-    // mul by 10 to get price in terms of gewi units
+    // mul by 10^10 to get price in terms of gewi units
     const price = BigNumber.from(10).mul(sellingToken0 ? token1EthPrice : token0EthPrice);
     const tokenDecimalPadding = BigNumber.from("10").pow(orderData.order.tokenOutDecimals);
     profitGwei = outDiff.mul(price).div(tokenDecimalPadding);
@@ -212,7 +149,7 @@ export function getOrderEffects(orderData: ILimitOrder, sellingToken0: boolean, 
  * @param inAmount amount that we want to sell
  * @param token0Amount balance of token0 in pool
  * @param token1Amount balance of token1 in pool
- * @returns amountIn that we can sell so that limitPrice is not surpassed (due to price slippage), amountOut, newPrice, newToken0Balance, newToken1Balance
+ * @returns amountIn that we can sell so that limitPrice is not surpassed (due to price impact), amountOut, newPrice, newToken0Balance, newToken1Balance
  */
 export function maxMarketSell(
   limitPrice: BigNumber,
@@ -237,7 +174,7 @@ export function maxMarketSell(
 
   if (marketSell.newPrice.lt(limitPrice)) {
 
-    // price impact is too high
+    // price impact is too high - we need to do a partial fill
     // calculating the amountIn (a) to get such a price impact that newPrice === price is a quadratic equation [ aa + 2ax + xx - xy/price = 0 ]
     // alternatively estimate amountIn with the following approach:
 

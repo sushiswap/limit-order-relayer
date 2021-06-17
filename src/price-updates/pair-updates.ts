@@ -3,6 +3,7 @@ import { BigNumber, ethers } from "ethers";
 import { Observable, Subject } from 'rxjs';
 import ERC20_ABI from '../abis/erc20';
 import { MyProvider } from "../utils/provider";
+import { MyLogger } from "../utils/myLogger";
 
 export const PRICE_MULTIPLIER = BigNumber.from(1e18.toString());
 
@@ -28,7 +29,7 @@ export function watchSushiwapPairs(watchPairs: IWatchPair[]): Observable<PriceUp
 
   watchPairs.forEach(async pair => {
 
-    updates.next(await fetchPairData(pair, provider)); // do it once at the beginning
+    fetchPairData(pair, provider).then(update => updates.next(update)).catch(); // do it once at the beginning
 
     if (MyProvider.Instance.usingSocket) {
 
@@ -37,11 +38,15 @@ export function watchSushiwapPairs(watchPairs: IWatchPair[]): Observable<PriceUp
         topics: [ethers.utils.id("Swap(address,uint256,uint256,uint256,uint256,address)")]
       };
 
-      MyProvider.Instance.socketProvider.on(filter, async () => updates.next(await fetchPairData(pair, provider)));
+      MyProvider.Instance.socketProvider.on(filter, async () => {
+        fetchPairData(pair, provider).then(update => updates.next(update)).catch();
+      });
 
     } else {
 
-      setInterval(async () => updates.next(await fetchPairData(pair, provider)), 180000); // every 3 min
+      setInterval(async () => {
+        fetchPairData(pair, provider).then(update => updates.next(update)).catch();
+      }, 180000); // every 3 min
 
     }
 
@@ -52,9 +57,7 @@ export function watchSushiwapPairs(watchPairs: IWatchPair[]): Observable<PriceUp
 
 async function fetchPairData(pair: IWatchPair, provider: ethers.providers.Provider): Promise<PriceUpdate> {
 
-  const { token0Balance, token1Balance } = await getPairBalances(pair, provider).catch();
-
-  if (!token0Balance || !token1Balance) return;
+  const { token0Balance, token1Balance } = await getPairBalances(pair, provider);
 
   const token0 = {
     price: (token1Balance.mul(PRICE_MULTIPLIER)).div(token0Balance),
@@ -75,13 +78,10 @@ async function getPairBalances(pair: IWatchPair, provider: ethers.providers.Prov
 
   const token0 = new ethers.Contract(pair.token0.address, ERC20_ABI, provider);
   const token1 = new ethers.Contract(pair.token1.address, ERC20_ABI, provider);
-  const token0Balance = await token0.balanceOf(pair.pairAddress).catch();
-  const token1Balance = await token1.balanceOf(pair.pairAddress).catch();
+
+  const token0Balance = await token0.balanceOf(pair.pairAddress).catch(e => MyLogger.log(`Failed to fetch pool price: ${e}`));
+  const token1Balance = await token1.balanceOf(pair.pairAddress).catch(e => MyLogger.log(`Failed to fetch pool price: ${e}`));
 
   return { token0Balance, token1Balance };
 
-}
-
-export function useWss() {
-  return process.env.USE_WSS === 'TRUE';
 }
