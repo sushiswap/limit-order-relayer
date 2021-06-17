@@ -38,7 +38,7 @@ export async function executeOrders(ordersData: ExecutableOrder[]): Promise<IExe
       keepTokenIn
     );
 
-    const wallet = MyProvider.Instance.wallet;
+    const signer = MyProvider.Instance.signer;
 
     const gasPrice = await getGweiGasPrice(+process.env.CHAINID);
 
@@ -48,7 +48,7 @@ export async function executeOrders(ordersData: ExecutableOrder[]): Promise<IExe
 
     if (!alreadyExecuted) {
 
-      const fillStatus = await fillOrder.fillOrder(wallet, { forceExecution: false, gasPrice: gasPrice, open: false });
+      const fillStatus = await fillOrder.fillOrder(signer, { forceExecution: false, gasPrice: gasPrice, open: false });
 
       if (fillStatus.executed) {
 

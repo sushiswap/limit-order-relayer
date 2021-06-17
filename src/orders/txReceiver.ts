@@ -34,7 +34,7 @@ const onClose = () => console.log('Socket closed');
 const onOpen = () => {
   clearInterval(intervalPointer);
   intervalPointer = setInterval(heartbeat, 3000);
-  console.log('Connecting to the Sushi Relayer service');
+  console.log('Connected to the Sushi Relay service');
 };
 
 const heartbeat = async () => {

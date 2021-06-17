@@ -1,10 +1,11 @@
+import { NonceManager } from "@ethersproject/experimental";
 import { providers, Wallet } from "ethers";
 
 export class MyProvider {
 
   private _provider: providers.JsonRpcProvider;
   private _socketProvider: providers.WebSocketProvider;
-  private _wallet: Wallet;
+  private _signer: NonceManager;
 
   private static _instance: MyProvider;
 
@@ -16,7 +17,7 @@ export class MyProvider {
 
     this._provider = new providers.JsonRpcProvider(process.env.HTTP_JSON_RPC);
 
-    this._wallet = new Wallet(process.env.PRIVATE_KEY, this._provider);
+    this._signer = new NonceManager(new Wallet(process.env.PRIVATE_KEY, this._provider)); // TODO we sould reset setTransactionCount every so often 
 
     if (process.env.WEBSOCKET_JSON_RPC) {
 
@@ -38,8 +39,8 @@ export class MyProvider {
     return this._socketProvider;
   }
 
-  public get wallet() {
-    return this._wallet;
+  public get signer() {
+    return this._signer;
   }
 
 }
