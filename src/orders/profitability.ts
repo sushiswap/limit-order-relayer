@@ -122,14 +122,12 @@ export async function getGweiGasPrice(chainId: number) {
   } else if (chainId === ChainId.MATIC) {
 
     const gasPrice = await axios('https://gasstation-mainnet.matic.network');
-    const fastPrice = gasPrice?.data.fast;
+
     const standardPrice = gasPrice?.data.standard;
 
-    if (!fastPrice || !standardPrice) return;
+    if (!standardPrice) return;
 
-    const average = (+fastPrice + standardPrice) / 2;
-
-    return BigNumber.from(Math.floor(average * 1e9));
+    return BigNumber.from(Math.floor(standardPrice * 1e9));
 
   }
 }
