@@ -4,6 +4,7 @@ import { Observable, Subject } from 'rxjs';
 import { filter, map, tap } from 'rxjs/operators';
 import { IMessageEvent, w3cwebsocket } from 'websocket';
 import { IWatchPair, ILimitOrder } from '../models/models';
+import { MyLogger } from '../utils/myLogger';
 import { getOrderPrice } from '../utils/price';
 import { validateLimitOrderData } from './validOrders';
 
@@ -28,12 +29,11 @@ function startSocket(url: string, onMessage: (m: IMessageEvent) => void): w3cweb
 
 const onError = (e) => console.log('SOCKET ERROR ', e);
 
-const onClose = () => console.log('SOCKET CLOSED');
+const onClose = () => undefined;
 
 const onOpen = () => {
   clearInterval(intervalPointer);
-  intervalPointer = setInterval(heartbeat, 5000);
-  console.log('Connected to the Sushi Relayer Service');
+  intervalPointer = setInterval(heartbeat, 3000);
 };
 
 const heartbeat = async () => {

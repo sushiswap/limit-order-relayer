@@ -70,7 +70,7 @@ export async function executeOrders(ordersData: ExecutableOrder[]): Promise<IExe
 
     } else {
 
-      console.log('Order already executing');
+      MyLogger.log('Order already executing');
 
     }
 

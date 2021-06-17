@@ -36,9 +36,9 @@ export class Database {
 
       this.database = Mongoose.connection;
 
-      this.database.once("open", () => { console.log("Connected to database"); resolve(); });
+      this.database.once("open", () => { MyLogger.log("Connected to database"); resolve(); });
 
-      this.database.on("error", () => { console.log("Error connecting to database"); reject(); });
+      this.database.on("error", () => { MyLogger.log("Error connecting to database"); reject(); });
 
     });
   };
@@ -78,7 +78,7 @@ export class Database {
 
     const model = new this.LimitOrderModel(limitOrder);
 
-    return model.save().then(() => MyLogger.log('✔ Limit order saved')).catch(err => {
+    return model.save().then(() => MyLogger.log('Limit order saved ✔')).catch(err => {
       if (err.code === 11000) {
         console.log('Ignored saving an existing order');
       } else {
