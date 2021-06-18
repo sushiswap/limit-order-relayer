@@ -50,8 +50,12 @@ function _watchLimitOrders(watchPairs: IWatchPair[]): Observable<ILimitOrderData
 
   socket = startSocket(socketUrl, ({ data }: any) => {
 
-    const order: ILimitOrderData = JSON.parse(data).limitOrder;
-    updates.next(order);
+    const parsedData = JSON.parse(data);
+
+    if (parsedData.tag = "LIMIT_ORDER_V2") {
+      const order: ILimitOrderData = parsedData.limitOrder;
+      updates.next(order);
+    }
 
   });
 
