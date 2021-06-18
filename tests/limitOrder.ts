@@ -1,12 +1,12 @@
-import { ILimitOrder } from '../src/models/models';
+import { IExecutedOrder, ILimitOrder } from '../src/models/models';
 import { Observable, of } from 'rxjs';
 import { getLimitOrderPairs } from '../src/utils/watchPairs';
 import { BigNumber } from '@ethersproject/bignumber';
 import { PriceUpdate, PRICE_MULTIPLIER } from '../src/price-updates/pair-updates';
 import { LimitOrderRelayer } from '../src/LimitOrderRelayer';
-import { executeOrders } from '../src/orders/execute';
 import { Database } from '../src/database/database';
 import { expect } from 'chai';
+import { ExecutableOrder } from '../src/orders/profitability';
 
 describe('LimitOrderTest', () => {
   it('Executing 2 Limit Orders', async () => {
@@ -14,7 +14,7 @@ describe('LimitOrderTest', () => {
     const limitOrderRelayer = new LimitOrderRelayer(
       mockLimitOrderWatcher,
       mockPairwatcher,
-      executeOrders,
+      mockExecuteOrders,
       mockOrderStatusRefresh,
       MockDatabase.Instance
     );
@@ -133,6 +133,10 @@ function mockPairwatcher(): Observable<PriceUpdate> {
 
 function mockOrderStatusRefresh(orders: ILimitOrder[]) {
   return mockPromise(orders.map(order => { order.filledAmount = "0"; return order }));
+}
+
+function mockExecuteOrders(ordersData: ExecutableOrder[]): Promise<IExecutedOrder[]> {
+  return mockPromise([]);
 }
 
 class MockDatabase extends Database {
