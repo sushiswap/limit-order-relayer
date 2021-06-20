@@ -21,6 +21,6 @@ export function validateEnv() {
 
   if (!process.env.PROFIT_RECEIVER_ADDRESS) throw new Error("PROFIT_RECEIVER_ADDRESS missing from env")
 
-  if (!process.env.INTERVAL_MINUTES) throw new Error("PROFIT_RECEIVER_ADDRESS missing from env")
+  if (!process.env.INTERVAL_MINUTES) throw new Error("INTERVAL_MINUTES missing from env")
 
 }
