@@ -1,7 +1,7 @@
 import { BigNumber } from "@ethersproject/bignumber";
 import { ILimitOrder } from "../models/models";
 import { PriceUpdate, PRICE_MULTIPLIER } from "../price-updates/pair-updates";
-import { getData } from "../utils/network";
+import { NetworkPrices } from "../utils/networkPrices";
 import { getMinRate } from "../utils/price";
 
 
@@ -19,16 +19,12 @@ export interface ExecutableOrder {
  * @param orders Orders that can be executed & if gas is 0 are already profitable
  * @returns Array of orders that when executed will net some profit for the relayer
  */
-export async function profitableOrders(priceUpdate: PriceUpdate, orders: ILimitOrder[], data = getData)
+export async function profitableOrders(priceUpdate: PriceUpdate, orders: ILimitOrder[], { gasPrice, token0EthPrice, token1EthPrice }: { [key: string]: BigNumber })
   : Promise<ExecutableOrder[]> {
 
   if (orders.length === 0) return [];
 
   const sellingToken0 = orders[0].order.tokenIn === priceUpdate.token0.address;
-
-  const { gasPrice, token0EthPrice, token1EthPrice } = await data(priceUpdate); // note: eth prices are multiplied by 1e9
-
-  if (!gasPrice || !token0EthPrice || !token1EthPrice) return [];
 
   return await _getProfitableOrders(priceUpdate, orders, sellingToken0, gasPrice, token0EthPrice, token1EthPrice);
 }

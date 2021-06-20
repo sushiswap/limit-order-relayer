@@ -27,14 +27,14 @@ function startSocket(url: string, onMessage: (m: IMessageEvent) => void): w3cweb
   return socket;
 }
 
-const onError = (e) => console.log('SOCKET ERROR ', e);
+const onError = (e) => MyLogger.log(`SOCKET ERROR: ${e} `);
 
-const onClose = () => console.log('Socket closed');
+const onClose = () => MyLogger.log('Socket closed');
 
 const onOpen = () => {
   clearInterval(intervalPointer);
   intervalPointer = setInterval(heartbeat, 3000);
-  console.log('Connected to the Sushi Relay service');
+  MyLogger.log('Connected to the Sushi Relay service');
 };
 
 const heartbeat = async () => {
@@ -53,8 +53,10 @@ function _watchLimitOrders(watchPairs: IWatchPair[]): Observable<ILimitOrderData
     const parsedData = JSON.parse(data);
 
     if (parsedData.tag = "LIMIT_ORDER_V2") {
+
       const order: ILimitOrderData = parsedData.limitOrder;
       updates.next(order);
+
     }
 
   });

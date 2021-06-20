@@ -7,6 +7,11 @@ export class MyProvider {
   private _socketProvider: providers.WebSocketProvider;
   private _signer: NonceManager;
 
+  // the relayer executes its logic every x seconds
+  // we will schedule a nonce reset 20 seconds before the next relayer interval
+  private relayerInterval: number;
+  private nonceResetTime: number;
+
   private static _instance: MyProvider;
 
   public static get Instance() {
@@ -25,6 +30,8 @@ export class MyProvider {
 
     }
 
+    this.relayerInterval = +process.env.INTERVAL_MINUTES * 60 * 1000;
+
   };
 
   public get provider() {
@@ -40,7 +47,42 @@ export class MyProvider {
   }
 
   public get signer() {
+
+    this.scheduleNonceReset();
+
     return this._signer;
+  }
+
+
+  private scheduleNonceReset() {
+
+    const now = (new Date()).getTime();
+
+    if (this.nonceResetTime < now) {
+
+      const timer = this.relayerInterval - 20000; // fire 20 seconds before next interval
+
+      this.nonceResetTime = now + timer;
+
+      setTimeout(() => {
+
+        this.resetNonce();
+
+      }, timer);
+
+    }
+
+  }
+
+
+  private async resetNonce() {
+
+    this._signer.getTransactionCount().then(count => {
+
+      this._signer.setTransactionCount(count);
+
+    });
+
   }
 
 }

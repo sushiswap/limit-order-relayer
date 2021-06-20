@@ -2,7 +2,7 @@ import { IWatchPair } from "../models/models";
 import { BigNumber, ethers } from "ethers";
 import { Observable, Subject } from 'rxjs';
 import ERC20_ABI from '../abis/erc20';
-import { MyProvider } from "../utils/provider";
+import { MyProvider } from "../utils/myProvider";
 import { MyLogger } from "../utils/myLogger";
 
 export const PRICE_MULTIPLIER = BigNumber.from(1e18.toString());
@@ -46,7 +46,7 @@ export function watchSushiwapPairs(watchPairs: IWatchPair[]): Observable<PriceUp
 
       setInterval(async () => {
         fetchPairData(pair, provider).then(update => updates.next(update)).catch();
-      }, 180000); // every 3 min
+      }, +process.env.INTERVAL_MINUTES * 60 * 1000); // every x min
 
     }
 

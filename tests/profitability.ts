@@ -4,7 +4,7 @@ import { expect } from 'chai';
 import { ILimitOrder } from '../src/models/models';
 import { maxMarketSell, getOrderEffects, sortOrders, marketSellOutput, getAmountOut, profitableOrders } from '../src/orders/profitability';
 import { PriceUpdate, PRICE_MULTIPLIER } from '../src/price-updates/pair-updates';
-import { getData } from '../src/utils/network';
+import { NetworkPrices } from '../src/utils/networkPrices';
 import { getOrderPrice, getOrderPriceString, getMinRate } from '../src/utils/price';
 
 const daiBalance = BigNumber.from("102817581502091247236234371"); // 102 m
@@ -241,18 +241,18 @@ describe('Profitability', () => {
 
     const _priceUpdate = deepCopyPriceUpdate(priceUpdate);
 
-    const profitable = await profitableOrders(_priceUpdate, [profitableSellOrder], () => new Promise((r) => r({
+    const profitable = await profitableOrders(_priceUpdate, [profitableSellOrder], {
       gasPrice: BigNumber.from("40"),
       token0EthPrice: BigNumber.from("49954"),
       token1EthPrice: BigNumber.from("100000000")
-    })));
+    });
 
-    expect(profitable.length).to.be.eq(1, "Profitable roder was filtered out by mistake");
+    expect(profitable.length).to.be.eq(1, "Profitable oroder was filtered out by mistake");
 
   });
 
   it('Should fetch external data', async () => {
-    const { gasPrice, token0EthPrice, token1EthPrice } = await getData(priceUpdate, ChainId.MAINNET);
+    const { gasPrice, token0EthPrice, token1EthPrice } = await (new NetworkPrices).getPrices(priceUpdate, ChainId.MAINNET);
     expect(!!gasPrice && !!token0EthPrice && !!token1EthPrice).to.be.true;
     expect(gasPrice.gt("0") && token0EthPrice.gt("0") && token1EthPrice.gt("0")).to.be.true;
   }).timeout(5000);
@@ -268,4 +268,18 @@ function deepCopyPriceUpdate(priceUpdate: PriceUpdate) {
   _priceUpdate.token0 = { ...priceUpdate.token0 };
   _priceUpdate.token1 = { ...priceUpdate.token1 };
   return _priceUpdate;
+}
+
+export class MockNetworkPrices extends NetworkPrices {
+  getWeiGasPrice = async function (chainid: ChainId): Promise<BigNumber> {
+    return BigNumber.from("4");
+  }
+  public getPrices = async function (priceUpdate: PriceUpdate, chainId):
+    Promise<{ gasPrice: BigNumber, token0EthPrice: BigNumber, token1EthPrice: BigNumber }> {
+    return {
+      gasPrice: BigNumber.from("4"),
+      token0EthPrice: BigNumber.from("49954"),
+      token1EthPrice: BigNumber.from("100000000")
+    }
+  }
 }

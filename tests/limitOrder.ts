@@ -7,6 +7,8 @@ import { LimitOrderRelayer } from '../src/LimitOrderRelayer';
 import { Database } from '../src/database/database';
 import { expect } from 'chai';
 import { ExecutableOrder } from '../src/orders/profitability';
+import { NetworkPrices } from '../src/utils/networkPrices';
+import { MockNetworkPrices } from './profitability';
 
 describe('LimitOrderTest', () => {
   it('Executing 2 Limit Orders', async () => {
@@ -16,7 +18,8 @@ describe('LimitOrderTest', () => {
       mockPairwatcher,
       mockExecuteOrders,
       mockOrderStatusRefresh,
-      MockDatabase.Instance
+      MockDatabase.Instance,
+      new MockNetworkPrices
     );
 
     const received = await new Promise<any>((resolve, reject) => {
@@ -121,7 +124,7 @@ const mockPriceUpdate: PriceUpdate = {
   }
 }
 
-const mockPromise = (a?) => new Promise<any>((r, re) => r(a));
+export const mockPromise = (a?) => new Promise<any>((r, re) => r(a));
 
 function mockLimitOrderWatcher(): Observable<ILimitOrder> {
   return of(undefined);
@@ -136,7 +139,7 @@ function mockOrderStatusRefresh(orders: ILimitOrder[]) {
 }
 
 function mockExecuteOrders(ordersData: ExecutableOrder[]): Promise<IExecutedOrder[]> {
-  return mockPromise([]);
+  return mockPromise(ordersData as any[]);
 }
 
 class MockDatabase extends Database {

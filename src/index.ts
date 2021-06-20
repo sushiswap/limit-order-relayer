@@ -6,6 +6,7 @@ import { LimitOrderRelayer } from './LimitOrderRelayer';
 import dotenv from 'dotenv';
 import { validateEnv } from './utils/validateEnv';
 import { refreshOrderStatus } from './orders/validOrders';
+import { NetworkPrices } from './utils/networkPrices';
 
 dotenv.config();
 
@@ -16,7 +17,8 @@ new LimitOrderRelayer(
   watchSushiwapPairs,
   executeOrders,
   refreshOrderStatus,
-  Database.Instance
+  Database.Instance,
+  new NetworkPrices
 ).init();
 
 process.on('exit', () => { stopReceivingOrders(); Database.Instance.disconnectDB(); });

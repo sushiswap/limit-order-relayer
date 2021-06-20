@@ -5,13 +5,13 @@ import { IExecutedOrder } from "../models/models";
 import { ExecutableOrder } from "./profitability";
 import DEFAULT_TOKEN_LIST from '@sushiswap/default-token-list';
 import { _desiredProfitToken } from '../relayer-config/pairs';
-import { MyProvider } from "../utils/provider";
+import { MyProvider } from "../utils/myProvider";
 import { MyLogger } from "../utils/myLogger";
-import { getGweiGasPrice } from "../utils/network";
+import { safeAwait } from "../utils/myAwait";
 
-export async function executeOrders(ordersData: ExecutableOrder[]): Promise<IExecutedOrder[]> {
+export async function executeOrders(ordersData: ExecutableOrder[], gasPrice: BigNumber): Promise<IExecutedOrder[]> {
 
-  const executed: IExecutedOrder[] = [];
+  const executedOrders: IExecutedOrder[] = [];
 
   await Promise.all(ordersData.map(async executableOrder => {
 
@@ -40,27 +40,27 @@ export async function executeOrders(ordersData: ExecutableOrder[]): Promise<IExe
 
     const signer = MyProvider.Instance.signer;
 
-    const gasPrice = await getGweiGasPrice(+process.env.CHAINID);
-
-    if (!gasPrice) return;
-
     const alreadyExecuted = ExecuteHelper.Instance.alreadyExecuted(executableOrder.limitOrderData.digest);
 
     if (!alreadyExecuted) {
 
-      const fillStatus = await fillOrder.fillOrder(signer, { forceExecution: false, gasPrice: gasPrice, open: false });
+      const [data, error] = await safeAwait(fillOrder.fillOrder(signer, { forceExecution: false, gasPrice: gasPrice, open: false }));
 
-      if (fillStatus.executed) {
+      if (error) return MyLogger.log(`Couldn't execute order ${error}`);
 
-        executed.push({
+      const { executed, transaction } = data;
+
+      if (executed) {
+
+        executedOrders.push({
           order: executableOrder.limitOrderData.order,
           digest: executableOrder.limitOrderData.digest,
           fillAmount: executableOrder.inAmount.toString(),
-          txHash: fillStatus.transactionHash,
+          txHash: transaction.hash,
 
         });
 
-        MyLogger.log(`${fillStatus.transactionHash}, gasPrice: ${parseFloat(gasPrice.div(1e8).toString()) / 10}`);
+        MyLogger.log(`${transaction.hash}, gasPrice: ${parseFloat(gasPrice.div(1e8).toString()) / 10}, nonce: ${transaction.nonce}`);
 
       } else {
 
@@ -77,7 +77,8 @@ export async function executeOrders(ordersData: ExecutableOrder[]): Promise<IExe
 
   }));
 
-  return executed;
+  return executedOrders;
+
 }
 
 export class ExecuteHelper {

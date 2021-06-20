@@ -3,13 +3,18 @@ import { ILimitOrder, IWatchPair } from "../models/models";
 import { utils, Contract, BigNumber } from 'ethers';
 import stopLimitOrderABI from '../abis/stopLimitOrder';
 import bentoBox from "../abis/bentoBox";
-import { MyProvider } from "../utils/provider";
+import { MyProvider } from "../utils/myProvider";
 import { Database } from "../database/database";
 import { MyLogger } from "../utils/myLogger";
 
-// This is called just before we try to execute orders
-// Check if the order is (still) valid
-// & update the order status in the database ** (move this to another function potentially)
+/**
+ *
+ * @param orders
+ * @param fetchUserBalance
+ * @returns Array of valid orders
+ * This is called just before we try to execute orders
+ * Check if the order is (still) valid & update the order status in the database
+ */
 export async function refreshOrderStatus(orders: ILimitOrder[], fetchUserBalance = true): Promise<ILimitOrder[]> {
 
   if (orders.length === 0) return [];
@@ -26,15 +31,23 @@ export async function refreshOrderStatus(orders: ILimitOrder[], fetchUserBalance
 
     const limitOrder = LimitOrder.getLimitOrder(order.order);
 
-    const { filled, filledAmount } = await isFilled(limitOrder, stopLimitOrderContract).catch(() => MyLogger.log(`Couldn't fetch order fill status`));
-    const canceled = await isCanceled(limitOrder, stopLimitOrderContract).catch(() => MyLogger.log(`Couldn't fetch order cancelation status`));
+    let filled, filledAmount, canceled, balance;
 
-    if (filled === undefined || canceled === undefined) return;
+    try {
 
-    if (fetchUserBalance) {
-      const balance = await getUserBalance(limitOrder.tokenInAddress, limitOrder.maker, bentoBoxContract).catch(e => MyLogger.log(`Couldn't fetch bento balance`));
-      if (!balance) return;
-      order.userBalance = balance.toString();
+      [filled, filledAmount] = await isFilled(limitOrder, stopLimitOrderContract);
+      canceled = await isCanceled(limitOrder, stopLimitOrderContract);
+
+      if (fetchUserBalance) {
+        // Use the current user balance. This is problematic as the user may have another order that we will execute that will use up this balance
+        balance = await getUserBalance(limitOrder.tokenInAddress, limitOrder.maker, bentoBoxContract);
+        order.userBalance = balance.toString();
+      }
+
+    } catch (error) {
+
+      return MyLogger.log(`Couldn't refresh order status ${error}`)
+
     }
 
     order.filledAmount = filledAmount.toString();
@@ -53,17 +66,19 @@ export async function refreshOrderStatus(orders: ILimitOrder[], fetchUserBalance
   if (invalidOrders.length > 0) Database.Instance.deleteLimitOrders(invalidOrders).then(info => MyLogger.log(`Deleted ${info.deletedCount} orders`));
 
   return validOrders;
+
 }
+
 
 export async function getUserBalance(tokenIn, maker, bentoBoxContract: Contract) {
   return bentoBoxContract.balanceOf(tokenIn, maker);
 }
 
-export async function isFilled(limitOrder: LimitOrder, stopLimitOrderContract: Contract): Promise<{ filled: boolean, filledAmount: BigNumber }> {
+export async function isFilled(limitOrder: LimitOrder, stopLimitOrderContract: Contract): Promise<[boolean, BigNumber]> {
 
   const orderStatus = await stopLimitOrderContract.orderStatus(limitOrder.getTypeHash());
 
-  return { filled: orderStatus.toString() === limitOrder.amountInRaw, filledAmount: BigNumber.from(orderStatus) }
+  return [orderStatus.toString() === limitOrder.amountInRaw, BigNumber.from(orderStatus)];
 
 }
 
@@ -73,19 +88,13 @@ export async function isCanceled(limitOrder: LimitOrder, stopLimitOrderContract:
 
 }
 
-export function isExpired(limitOrder: LimitOrder): boolean {
-  return (Number(limitOrder.endTime) < Math.floor(Date.now() / 1000));
-}
-
-export function isLive(limitOrder: LimitOrder): boolean {
-  return (Number(limitOrder.startTime) < Math.floor(Date.now() / 1000));
-}
-
-// This is called after we receive the order from the user
-// todo don't store orders that aren't present in the watch pairs array
-/*
-  Checks: Validate Signature, Validate Amounts, Validate Expiry
-*/
+/**
+ * @param order
+ * @param watchPairs array of pairs we execute limit orders on, an order isn't considered correct if its not covered by the watch paris array
+ * @returns
+ * @note This is called after we receive the order from the user
+ * @note Checks: Validate Signature, Validate Amounts, Validate Expiry
+ */
 export function validateLimitOrderData(order: ILimitOrderData, watchPairs: IWatchPair[]): boolean {
 
   let limitOrder;
@@ -118,4 +127,12 @@ function checkSignature(limitOrder: LimitOrder): boolean {
   );
 
   return recoveredAddress === limitOrder.maker;
+}
+
+export function isExpired(limitOrder: LimitOrder): boolean {
+  return (Number(limitOrder.endTime) < Math.floor(Date.now() / 1000));
+}
+
+export function isLive(limitOrder: LimitOrder): boolean {
+  return (Number(limitOrder.startTime) < Math.floor(Date.now() / 1000));
 }
