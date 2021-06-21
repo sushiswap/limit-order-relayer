@@ -1,5 +1,6 @@
 import { NonceManager } from "@ethersproject/experimental";
 import { providers, Wallet } from "ethers";
+import { MyLogger } from "./myLogger";
 
 export class MyProvider {
 
@@ -79,6 +80,7 @@ export class MyProvider {
 
     this._signer.getTransactionCount().then(count => {
 
+      MyLogger.log(`Resetting nonce to: ${count}`);
       this._signer.setTransactionCount(count);
 
     });
