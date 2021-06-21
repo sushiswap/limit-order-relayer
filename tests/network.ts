@@ -27,7 +27,7 @@ describe('Token prices', () => {
       } as PriceUpdate
     })
 
-    const prices = Promise.all(mockPriceUpdates.map(pu => networkPrices.getPrices(pu, +process.env.chainId)));
+    const prices = Promise.all(mockPriceUpdates.map(pu => networkPrices.getPrices(pu, +process.env.CHAINID)));
 
     expect(await prices).to.not.throw;
 
