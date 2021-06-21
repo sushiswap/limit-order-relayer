@@ -5,7 +5,6 @@ import { ChainId } from '@sushiswap/sdk';
 import { getPairAddress } from './pairAddress';
 import { getPairBalances } from '../price-updates/pair-updates';
 import { MyProvider } from './myProvider';
-import { MyLogger } from './myLogger';
 
 interface IToken { chainId: number, address: string, name: string, symbol: string, decimals: number, logoUrl?: string };
 export interface ITokenList { name: string, logoURL?: string, keywords: any, timestamp: any, tokens: IToken[], version: any };
