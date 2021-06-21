@@ -4,7 +4,7 @@ dotenv.config();
 export const _limitOrderPairs: string[][] = [
   // ["USDC", "IRON"],
   // ["WMATIC", "TITAN"],
-  // ["WETH", "USDC"],
+  ["WETH", "USDC"],
   ["WBTC", "WETH"],
   // ["WMATIC", "WETH"],
   // ["TITAN", "IRON"],
@@ -21,7 +21,7 @@ export const _limitOrderPairs: string[][] = [
   // ["SNX", "USDC"],
   // ["FRAX", "FXS"],
   // ["WETH", "DHT"],
-  // ["SUSHI", "WETH"],
+  ["SUSHI", "WETH"],
   // ["GRT", "WETH"]
 ]
 

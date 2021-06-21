@@ -63,7 +63,6 @@ export class MyProvider {
       const timer = this.relayerInterval - 20000; // fire 20 seconds before next interval
 
       this.nonceResetTime = now + timer;
-      console.log('rsetting nonce in... ', timer);
 
       setTimeout(() => {
 
@@ -79,7 +78,7 @@ export class MyProvider {
   private async resetNonce() {
 
     this._signer.getTransactionCount().then(count => {
-      console.log('get tx count', count);
+
       this._signer.setTransactionCount(count);
 
     });

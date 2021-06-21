@@ -8,9 +8,6 @@ describe('Token prices', () => {
   it.only('Should get price of every token', async () => {
 
     const pairs: IWatchPair[] = await getLimitOrderPairs();
-    console.log(pairs);
-
-    // const tokens = [].concat.apply([], pairs.map(pair => [pair.token0, pair.token1])).filter((v, i, a) => a.findIndex(el => el.address === v.address) === i);
 
     const networkPrices = new NetworkPrices();
 

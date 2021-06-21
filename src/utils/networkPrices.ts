@@ -34,8 +34,6 @@ export class NetworkPrices {
 
     if (priceUpdate.token1.address === process.env.WETH_ADDRESS) token1EthPrice = BigNumber.from("100000000"); // better precision; calculated price is usually off by some %
 
-    console.log(token0EthPrice, token1EthPrice, priceUpdate.token0.address, priceUpdate.token1.addressMainnet);
-
     if (!token0EthPrice && !token1EthPrice) throw new Error(`Couldn't fetch token prices ${priceUpdate.token1.address} ${priceUpdate.token0.address}`);
 
     if (!token1EthPrice) token1EthPrice = token0EthPrice.mul(priceUpdate.token1.price).div(PRICE_MULTIPLIER);
@@ -102,7 +100,6 @@ export class NetworkPrices {
 
       } else if (chainId === ChainId.MATIC) {
 
-        console.log(`https://api.coingecko.com/api/v3/coins/ethereum/contract/${tokenMainnetAddress}`, `https://api.coingecko.com/api/v3/coins/polygon-pos/contract/${tokenAddress}`);
         const [token0USDPrice, maticPrice] = await Promise.all([
           tokenMainnetAddress ?
             axios(`https://api.coingecko.com/api/v3/coins/ethereum/contract/${tokenMainnetAddress}`) :
