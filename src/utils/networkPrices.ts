@@ -110,8 +110,6 @@ export class NetworkPrices {
         const tokenUsd = token0USDPrice?.data?.market_data?.current_price.usd;
         const maticUsd = maticPrice?.data?.market_data?.current_price.usd;
 
-        console.log('tokens', tokenUsd, maticUsd);
-
         if (tokenUsd && maticUsd) {
           tokenPrice = tokenUsd / maticUsd;
         }

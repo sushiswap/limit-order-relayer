@@ -101,7 +101,7 @@ export class ExecuteHelper {
 
     this.profitTokens = _desiredProfitToken.map(tokenSymbol => tokens.find(token => token.symbol === tokenSymbol).address).reverse();
 
-    if (this.profitTokens.indexOf(undefined) !== -1) console.log(`Error! Couldn't find profit token`);
+    if (this.profitTokens.indexOf(undefined) !== -1) MyLogger.log(`Error! Couldn't find profit token`);
 
   };
 
