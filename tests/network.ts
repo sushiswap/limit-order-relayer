@@ -5,7 +5,7 @@ import { expect } from 'chai';
 import { PriceUpdate, PRICE_MULTIPLIER } from '../src/price-updates/pair-updates';
 
 describe('Token prices', () => {
-  it.only('Should get price of every token', async () => {
+  it('Should get price of every token', async () => {
 
     const pairs: IWatchPair[] = await getLimitOrderPairs();
 
