@@ -6,7 +6,7 @@ export const _limitOrderPairs: string[][] = [
   // ["WMATIC", "TITAN"],
   ["WETH", "USDC"],
   ["WBTC", "WETH"],
-  // ["WMATIC", "WETH"],
+  ["WMATIC", "WETH"],
   // ["TITAN", "IRON"],
   // ["WETH", "USDT"],
   // ["USDC", "USDT"],
