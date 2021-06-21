@@ -10,7 +10,7 @@ export class MyProvider {
   // the relayer executes its logic every x seconds
   // we will schedule a nonce reset 20 seconds before the next relayer interval
   private relayerInterval: number;
-  private nonceResetTime: number;
+  private nonceResetTime = 0;
 
   private static _instance: MyProvider;
 
@@ -63,6 +63,7 @@ export class MyProvider {
       const timer = this.relayerInterval - 20000; // fire 20 seconds before next interval
 
       this.nonceResetTime = now + timer;
+      console.log('rsetting nonce in... ', timer);
 
       setTimeout(() => {
 
@@ -78,7 +79,7 @@ export class MyProvider {
   private async resetNonce() {
 
     this._signer.getTransactionCount().then(count => {
-
+      console.log('get tx count', count);
       this._signer.setTransactionCount(count);
 
     });

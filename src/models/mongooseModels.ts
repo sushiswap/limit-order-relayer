@@ -14,11 +14,13 @@ const Schema = Mongoose.Schema;
 export const watchPairModel = new Schema({
   token0: {
     address: String,
+    addressMainnet: String,
     decimals: Number,
     symbol: String
   },
   token1: {
     address: String,
+    addressMainnet: String,
     decimals: Number,
     symbol: String
   },

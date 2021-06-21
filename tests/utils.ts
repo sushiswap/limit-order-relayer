@@ -1,7 +1,6 @@
 import { BigNumber } from '@ethersproject/bignumber';
 import { ChainId } from '@sushiswap/sdk';
 import { expect } from 'chai';
-import { PRICE_MULTIPLIER } from '../src/price-updates/pair-updates';
 import { NetworkPrices } from '../src/utils/networkPrices';
 import { getOrderPrice } from '../src/utils/price';
 
