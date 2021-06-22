@@ -7,7 +7,7 @@ import { MyLogger } from "./myLogger";
 export class NetworkPrices {
 
   // use 1 min cache to help prevent rate limits
-  private cache: {
+  cache: {
     [key: string]: {
       timestamp: number,
       value: BigNumber
@@ -22,25 +22,36 @@ export class NetworkPrices {
   public getPrices = async function (priceUpdate: PriceUpdate, chainId = +process.env.CHAINID):
     Promise<{ gasPrice: BigNumber, token0EthPrice: BigNumber, token1EthPrice: BigNumber }> {
 
-    let gasPrice, token0EthPrice, token1EthPrice;
+    const gasPrice = await this.getWeiGasPrice(chainId);
 
-    [gasPrice, token0EthPrice, token1EthPrice] = await Promise.all([
-      this.getWeiGasPrice(chainId),
-      this.getTokenEthPrice(chainId, priceUpdate.token0.address, priceUpdate.token0.addressMainnet),
-      this.getTokenEthPrice(chainId, priceUpdate.token1.address, priceUpdate.token1.addressMainnet)
-    ]);
+    let token0EthPrice, token1EthPrice;
 
-    if (priceUpdate.token0.address === process.env.WETH_ADDRESS) token0EthPrice = BigNumber.from("100000000"); // better precision; calculated price is usually off by some %
+    if (priceUpdate.token0.address === process.env.WETH_ADDRESS) token0EthPrice = BigNumber.from("100000000");
 
-    if (priceUpdate.token1.address === process.env.WETH_ADDRESS) token1EthPrice = BigNumber.from("100000000"); // better precision; calculated price is usually off by some %
+    if (priceUpdate.token1.address === process.env.WETH_ADDRESS) token1EthPrice = BigNumber.from("100000000");
+
+    if (!token0EthPrice && !token1EthPrice) { // fetch one of the prices from coingecko
+
+      token0EthPrice = await this.getTokenEthPrice(chainId, priceUpdate.token0.address, priceUpdate.token0.addressMainnet);
+
+      if (!token0EthPrice) {
+
+        token1EthPrice = await this.getTokenEthPrice(chainId, priceUpdate.token1.address, priceUpdate.token1.addressMainnet);
+
+      }
+
+    }
+
+    // if we have one token price we can caluculate the other from the pool's price
+
+    if (token0EthPrice && !token1EthPrice) token1EthPrice = token0EthPrice.mul(priceUpdate.token1.price).div(PRICE_MULTIPLIER);
+
+    if (token1EthPrice && !token0EthPrice) token0EthPrice = token1EthPrice.mul(priceUpdate.token0.price).div(PRICE_MULTIPLIER);
 
     if (!token0EthPrice && !token1EthPrice) throw new Error(`Couldn't fetch token prices ${priceUpdate.token1.address} ${priceUpdate.token0.address}`);
 
-    if (!token1EthPrice) token1EthPrice = token0EthPrice.mul(priceUpdate.token1.price).div(PRICE_MULTIPLIER);
-
-    if (!token0EthPrice) token0EthPrice = token1EthPrice.mul(priceUpdate.token0.price).div(PRICE_MULTIPLIER);
-
     return { gasPrice, token0EthPrice, token1EthPrice };
+
   }
 
   /**

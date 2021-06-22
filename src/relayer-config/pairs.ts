@@ -2,27 +2,27 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 export const _limitOrderPairs: string[][] = [
-  // ["USDC", "IRON"],
-  // ["WMATIC", "TITAN"],
+  ["USDC", "IRON"],
+  ["WMATIC", "TITAN"],
   ["WETH", "USDC"],
   ["WBTC", "WETH"],
   ["WMATIC", "WETH"],
-  // ["TITAN", "IRON"],
-  // ["WETH", "USDT"],
-  // ["USDC", "USDT"],
-  // ["WETH", "DAI"],
-  // ["LINK", "WETH"],
-  // ["WETH", "AAVE"],
-  // ["USDC", "DAI"],
-  // ["WMATIC", "USDC"],
-  // ["FRAX", "USDC"],
-  // ["WMATIC", "FISH"],
-  // ["CRV", "WETH"],
-  // ["SNX", "USDC"],
-  // ["FRAX", "FXS"],
-  // ["WETH", "DHT"],
+  // ["TITAN", "IRON"], can't fetch prices of these tokens directly
+  ["WETH", "USDT"],
+  ["USDC", "USDT"],
+  ["WETH", "DAI"],
+  ["LINK", "WETH"],
+  ["WETH", "AAVE"],
+  ["USDC", "DAI"],
+  ["WMATIC", "USDC"],
+  ["FRAX", "USDC"],
+  ["WMATIC", "FISH"],
+  ["CRV", "WETH"],
+  ["SNX", "USDC"],
+  ["FRAX", "FXS"],
+  ["WETH", "DHT"],
   ["SUSHI", "WETH"],
-  // ["GRT", "WETH"]
+  ["GRT", "WETH"]
 ]
 
 export const _desiredProfitToken: string[] = ["WMATIC", "WETH", "SUSHI", "WBTC", "USDC", "DAI", "USDT"];
