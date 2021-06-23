@@ -7,6 +7,7 @@ import { safeAwait } from './utils/myAwait';
 import { MyLogger } from './utils/myLogger';
 import { NetworkPrices } from './utils/networkPrices';
 import { BigNumber } from 'ethers';
+import { getLimitOrderPairs } from './utils/watchPairs';
 
 export class LimitOrderRelayer {
 
@@ -45,7 +46,9 @@ export class LimitOrderRelayer {
 
 
     // which pairs we execute limit orders for
-    const [watchPairs,] = await safeAwait(this.database.setWatchPairs());
+    // const [watchPairs,] = await safeAwait(this.database.setWatchPairs());
+    const [watchPairs,] = await safeAwait(getLimitOrderPairs());
+
 
     if (!watchPairs || watchPairs.length == 0) return MyLogger.log('No pairs to watch');
 

@@ -1,4 +1,4 @@
-import { _limitOrderPairs } from '../relayer-config/pairs';
+import { fetchLimitOrderPairs } from '../relayer-config/pairs';
 import { IWatchPair } from '../models/models';
 import DEFAULT_TOKEN_LIST from '@sushiswap/default-token-list';
 import { ChainId } from '@sushiswap/sdk';
@@ -16,11 +16,12 @@ export const getLimitOrderPairs = async (): Promise<IWatchPair[]> => {
 
   const watchPairs: IWatchPair[] = [];
 
-  await Promise.all(_limitOrderPairs.map(async ([token0Symbol, token1Symbol]) => {
+  const limitOrderPairs = await fetchLimitOrderPairs(+process.env.CHAINID);
+
+  await Promise.all(limitOrderPairs.map(async ([token0Symbol, token1Symbol]) => {
 
     const token0 = tokens.find(token => token.symbol === token0Symbol);
     const token1 = tokens.find(token => token.symbol === token1Symbol);
-
 
     const token0mainnet = tokensMainnet.find(token => token.symbol === token0Symbol) ?? { address: "" };
     const token1mainnet = tokensMainnet.find(token => token.symbol === token1Symbol) ?? { address: "" };

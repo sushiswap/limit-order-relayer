@@ -80,7 +80,6 @@ export class MyProvider {
 
     this._signer.getTransactionCount().then(count => {
 
-      MyLogger.log(`Resetting nonce to: ${count}`);
       this._signer.setTransactionCount(count);
 
     });

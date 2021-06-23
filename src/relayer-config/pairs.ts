@@ -1,5 +1,17 @@
 import dotenv from 'dotenv';
+import axios from 'axios';
+import { LAMBDA_URL } from 'limitorderv2-sdk';
+import { ChainId } from '@sushiswap/sdk';
 dotenv.config();
+
+export const fetchLimitOrderPairs = async function (chainId: ChainId): Promise<string[][]> {
+  return (await axios(`${LAMBDA_URL}/orders/pairs`, {
+    method: 'POST',
+    data: {
+      chainId: chainId
+    }
+  })).data.data.pairs;
+}
 
 export const _limitOrderPairs: string[][] = [
   ["USDC", "IRON"],
@@ -25,7 +37,13 @@ export const _limitOrderPairs: string[][] = [
   ["GRT", "WETH"]
 ]
 
-export const _desiredProfitToken: string[] = ["WMATIC", "WETH", "SUSHI", "WBTC", "USDC", "DAI", "USDT"];
+export const getDesiredProfitToken = function (chainId: ChainId): string[] {
+
+  if (chainId === ChainId.MATIC) {
+    return ["WMATIC", "WETH", "SUSHI", "WBTC", "USDC", "DAI", "USDT"];
+  }
+
+}
 
 function getPairCombinations() {
 

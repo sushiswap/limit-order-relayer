@@ -14,6 +14,8 @@ export class NetworkPrices {
     }
   } = {};
 
+  stablecoins = ["DAI", "USDC", "USDT"];
+
   /**
   * @returns Gas price in wei units (e.g.) 9000000000 for gas price of '9', token0 and token1 prices in eth
   * @note use safeAwait when calling this, it might throw an error
@@ -32,11 +34,11 @@ export class NetworkPrices {
 
     if (!token0EthPrice && !token1EthPrice) { // fetch one of the prices from coingecko
 
-      token0EthPrice = await this.getTokenEthPrice(chainId, priceUpdate.token0.address, priceUpdate.token0.addressMainnet);
+      token0EthPrice = await this.getTokenEthPrice(chainId, priceUpdate.token0.address, priceUpdate.token0.addressMainnet, priceUpdate.pair.token0.symbol);
 
       if (!token0EthPrice) {
 
-        token1EthPrice = await this.getTokenEthPrice(chainId, priceUpdate.token1.address, priceUpdate.token1.addressMainnet);
+        token1EthPrice = await this.getTokenEthPrice(chainId, priceUpdate.token1.address, priceUpdate.token1.addressMainnet, priceUpdate.pair.token1.symbol);
 
       }
 
@@ -94,9 +96,11 @@ export class NetworkPrices {
    * @returns price of token in terms of "WETH" or whichever coin the network fees are paid in
    * @note eth prices are multiplied by 1e8
    */
-  public getTokenEthPrice = async function (chainId: number, tokenAddress: string, tokenMainnetAddress?: string): Promise<BigNumber | undefined> {
+  public getTokenEthPrice = async function (chainId: number, tokenAddress: string, tokenMainnetAddress?: string, tokenSymbol?: string): Promise<BigNumber | undefined> {
 
     if (this.cache[tokenAddress]?.timestamp > (new Date().getTime() - 60000)) return this.cache[tokenAddress]?.value;
+
+    const isUSD = this.stablecoins.includes(tokenSymbol);
 
     let tokenPrice: any;
 
@@ -111,15 +115,21 @@ export class NetworkPrices {
 
       } else if (chainId === ChainId.MATIC) {
 
-        const [token0USDPrice, maticPrice] = await Promise.all([
-          tokenMainnetAddress ?
-            axios(`https://api.coingecko.com/api/v3/coins/ethereum/contract/${tokenMainnetAddress}`) :
-            axios(`https://api.coingecko.com/api/v3/coins/polygon-pos/contract/${tokenAddress}`),
-          axios(`https://api.coingecko.com/api/v3/coins/matic-network?localization=false&tickers=false&market_data=true&community_data=false&developer_data=false&sparkline=false`)
-        ]);
+        const maticUsd = (await axios(`https://api.coingecko.com/api/v3/coins/matic-network?localization=false&tickers=false&market_data=true&community_data=false&developer_data=false&sparkline=false`))?.data?.market_data?.current_price.usd;
 
-        const tokenUsd = token0USDPrice?.data?.market_data?.current_price.usd;
-        const maticUsd = maticPrice?.data?.market_data?.current_price.usd;
+        let tokenUsd;
+
+        if (isUSD) {
+
+          tokenUsd = 1;
+
+        } else {
+
+          tokenUsd = (await (tokenMainnetAddress ?
+            axios(`https://api.coingecko.com/api/v3/coins/ethereum/contract/${tokenMainnetAddress}`) :
+            axios(`https://api.coingecko.com/api/v3/coins/polygon-pos/contract/${tokenAddress}`)))?.data?.market_data?.current_price.usd;
+
+        }
 
         if (tokenUsd && maticUsd) {
           tokenPrice = tokenUsd / maticUsd;

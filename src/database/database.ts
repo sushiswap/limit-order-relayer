@@ -1,4 +1,4 @@
-import Mongoose, { UpdateWriteOpResult } from "mongoose";
+import Mongoose from "mongoose";
 import { executedOrderModel, limitOrderModel, watchPairModel } from "../models/mongooseModels";
 import { IExecutedOrder, IExecutedOrderModel, ILimitOrder, ILimitOrderModel, IWatchPair, IWatchPairModel } from "../models/models";
 import { getLimitOrderPairs } from "../utils/watchPairs";
@@ -11,7 +11,7 @@ export class Database {
 
   private database: Mongoose.Connection;
 
-  private WatchPairModel = Mongoose.model<IWatchPairModel>("watchPairModel", watchPairModel);
+  // private WatchPairModel = Mongoose.model<IWatchPairModel>("watchPairModel", watchPairModel);
   private LimitOrderModel = Mongoose.model<ILimitOrderModel>("limitOrderModel", limitOrderModel);
   private ExecutedOrderModel = Mongoose.model<IExecutedOrderModel>("executedOrderModel", executedOrderModel);
 
@@ -47,20 +47,20 @@ export class Database {
     if (this.database) Mongoose.disconnect();
   };
 
-  public async setWatchPairs(): Promise<IWatchPair[] | void> {
+  /* public async setWatchPairs(): Promise<IWatchPair[] | void> {
     await this.dropPairs();
     return this.saveWatchPairs(await getLimitOrderPairs());
-  }
+  } */
 
-  protected async dropPairs() {
+  /* protected async dropPairs() {
     await this.WatchPairModel.deleteMany({}).exec();
-  }
+  } */
 
   public async saveLimitOrders(limitOrders: ILimitOrder[]): Promise<(ILimitOrder | void)[]> {
     return Promise.all(limitOrders.map(order => this.saveLimitOrder(order)));
   }
 
-  public saveWatchPairs(watchPairs: IWatchPair[]): Promise<IWatchPair[] | void> {
+  /* public saveWatchPairs(watchPairs: IWatchPair[]): Promise<IWatchPair[] | void> {
 
     return Promise.all(watchPairs.map(async pair => {
 
@@ -72,7 +72,7 @@ export class Database {
       return model.save();
 
     }));
-  }
+  } */
 
   public async saveLimitOrder(limitOrder: ILimitOrder): Promise<ILimitOrder | void> {
 

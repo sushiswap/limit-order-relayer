@@ -4,7 +4,7 @@ import { FillLimitOrder, getAdvancedReceiver, LimitOrder } from "limitorderv2-sd
 import { IExecutedOrder } from "../models/models";
 import { ExecutableOrder } from "./profitability";
 import DEFAULT_TOKEN_LIST from '@sushiswap/default-token-list';
-import { _desiredProfitToken } from '../relayer-config/pairs';
+import { getDesiredProfitToken } from '../relayer-config/pairs';
 import { MyProvider } from "../utils/myProvider";
 import { MyLogger } from "../utils/myLogger";
 import { safeAwait } from "../utils/myAwait";
@@ -65,7 +65,7 @@ export async function executeOrders(ordersData: ExecutableOrder[], gasPrice: Big
       } else {
 
         ExecuteHelper.Instance.remove(executableOrder.limitOrderData.digest);
-        MyLogger.log("Gas estimation failed");
+        MyLogger.log(`Gas estimation failed for: ${order}`);
 
       }
 
@@ -99,9 +99,9 @@ export class ExecuteHelper {
 
     const tokens = DEFAULT_TOKEN_LIST.tokens.filter(token => token.chainId === +process.env.CHAINID);
 
-    this.profitTokens = _desiredProfitToken.map(tokenSymbol => tokens.find(token => token.symbol === tokenSymbol).address).reverse();
+    this.profitTokens = getDesiredProfitToken(+process.env.CHAINID).map(tokenSymbol => tokens.find(token => token.symbol === tokenSymbol).address).reverse();
 
-    if (this.profitTokens.indexOf(undefined) !== -1) MyLogger.log(`Error! Couldn't find profit token`);
+    if (this.profitTokens.length && this.profitTokens.indexOf(undefined) !== -1) MyLogger.log(`Error! Couldn't find profit token @ index ${this.profitTokens.indexOf(undefined)}`);
 
   };
 
