@@ -46,7 +46,7 @@ export async function executeOrders(ordersData: ExecutableOrder[], gasPrice: Big
 
       const [data, error] = await safeAwait(fillOrder.fillOrder(signer, { forceExecution: false, gasPrice: gasPrice, open: false }));
 
-      if (error) return MyLogger.log(`Couldn't execute order ${error}`);
+      if (error) return MyLogger.log(`Couldn't execute order ${error.toString().substring(0, 200)} ...`);
 
       const { executed, transaction } = data;
 

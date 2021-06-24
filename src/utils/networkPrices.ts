@@ -139,7 +139,7 @@ export class NetworkPrices {
 
     } catch (e) {
 
-      return MyLogger.log(`Couldn't fetch eth price of token: ${tokenAddress} ${e}`);
+      return MyLogger.log(`Couldn't fetch eth price of token: ${tokenAddress} ${e.toString().substring(0, 150)} ...`);
 
     }
 

@@ -31,7 +31,7 @@ export function watchSushiwapPairs(watchPairs: IWatchPair[]): Observable<PriceUp
 
   watchPairs.forEach(async pair => {
 
-    fetchPairData(pair, provider).then(update => updates.next(update)).catch(e => MyLogger.log(`Failed to fetch pool price ${e}`)); // do it once at the beginning
+    fetchPairData(pair, provider).then(update => updates.next(update)).catch(e => MyLogger.log(`Failed to fetch pool price ${e.toString().substring(0, 100)} ...`)); // do it once at the beginning
 
     if (MyProvider.Instance.usingSocket) {
 
@@ -41,13 +41,13 @@ export function watchSushiwapPairs(watchPairs: IWatchPair[]): Observable<PriceUp
       };
 
       MyProvider.Instance.socketProvider.on(filter, async () => {
-        fetchPairData(pair, provider).then(update => updates.next(update)).catch(e => MyLogger.log(`Failed to fetch pool price ${e}`));
+        fetchPairData(pair, provider).then(update => updates.next(update)).catch(e => MyLogger.log(`Failed to fetch pool price ${e.toString().substring(0, 100)} ...`));
       });
 
     } else {
 
       setInterval(async () => {
-        fetchPairData(pair, provider).then(update => updates.next(update)).catch(e => MyLogger.log(`Failed to fetch pool price ${e}`));
+        fetchPairData(pair, provider).then(update => updates.next(update)).catch(e => MyLogger.log(`Failed to fetch pool price ${e.toString().substring(0, 100)} ...`));
       }, +process.env.INTERVAL_MINUTES * 60 * 1000); // every x min
 
     }

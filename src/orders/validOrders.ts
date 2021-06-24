@@ -46,7 +46,7 @@ export async function refreshOrderStatus(orders: ILimitOrder[], fetchUserBalance
 
     } catch (error) {
 
-      return MyLogger.log(`Couldn't refresh order status ${error}`)
+      return MyLogger.log(`Couldn't refresh order status ${error.toString().substring(0, 100)} ...`)
 
     }
 
