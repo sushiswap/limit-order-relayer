@@ -83,7 +83,7 @@ export class Database {
       MyLogger.log('Limit order saved ✔');
 
       const current = new Date();
-      const today = new Date(current.getFullYear(), current.getMonth(), current.getDay());
+      const today = (new Date(current.getFullYear(), current.getMonth(), current.getDay())).getTime();
 
       this.OrderCounterModel.updateOne({ date: today }, { $inc: { counter: 1 } }, { upsert: true }).exec();
 

@@ -41,7 +41,7 @@ export interface IExecutedOrder {
 export interface IExecutedOrderModel extends IExecutedOrder, Document { };
 
 export interface IOrderCounter {
-  date: Date,
+  date: number,
   counter: number
 }
 

@@ -78,9 +78,9 @@ export const executedOrderModel = new Schema({
 }, { timestamps: true });
 
 export const orderCounterModel = new Schema({
-  date: Date,
+  date: Number,
   counter: Number
-})
+});
 
 watchPairModel.set("collection", `watchpairs_${process.env.CHAINID}`);
 limitOrderModel.set("collection", `limitorders_${process.env.CHAINID}`);
