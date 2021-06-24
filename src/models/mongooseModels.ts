@@ -77,9 +77,15 @@ export const executedOrderModel = new Schema({
   txHash: String,
 }, { timestamps: true });
 
+export const orderCounterModel = new Schema({
+  date: Date,
+  counter: Number
+})
+
 watchPairModel.set("collection", `watchpairs_${process.env.CHAINID}`);
 limitOrderModel.set("collection", `limitorders_${process.env.CHAINID}`);
 executedOrderModel.set("collection", `executedorders_${process.env.CHAINID}`);
+orderCounterModel.set("collection", `orderCounter_${process.env.CHAINID}`);
 
 
 // middleware - execute before saving a "watch pair"

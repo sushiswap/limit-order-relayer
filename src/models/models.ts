@@ -39,3 +39,10 @@ export interface IExecutedOrder {
 }
 
 export interface IExecutedOrderModel extends IExecutedOrder, Document { };
+
+export interface IOrderCounter {
+  date: Date,
+  counter: number
+}
+
+export interface IOrderCounterModel extends IOrderCounter, Document { };

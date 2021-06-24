@@ -1,7 +1,6 @@
 import Mongoose from "mongoose";
-import { executedOrderModel, limitOrderModel, watchPairModel } from "../models/mongooseModels";
-import { IExecutedOrder, IExecutedOrderModel, ILimitOrder, ILimitOrderModel, IWatchPair, IWatchPairModel } from "../models/models";
-import { getLimitOrderPairs } from "../utils/watchPairs";
+import { executedOrderModel, limitOrderModel, orderCounterModel } from "../models/mongooseModels";
+import { IExecutedOrder, IExecutedOrderModel, ILimitOrder, ILimitOrderModel, IOrderCounterModel } from "../models/models";
 import { BigNumber } from "@ethersproject/bignumber";
 import { MyLogger } from "../utils/myLogger";
 
@@ -14,6 +13,7 @@ export class Database {
   // private WatchPairModel = Mongoose.model<IWatchPairModel>("watchPairModel", watchPairModel);
   private LimitOrderModel = Mongoose.model<ILimitOrderModel>("limitOrderModel", limitOrderModel);
   private ExecutedOrderModel = Mongoose.model<IExecutedOrderModel>("executedOrderModel", executedOrderModel);
+  private OrderCounterModel = Mongoose.model<IOrderCounterModel>("orderCounterModel", orderCounterModel);
 
   public static get Instance() {
     return this._instance || (this._instance = new this());
@@ -78,12 +78,23 @@ export class Database {
 
     const model = new this.LimitOrderModel(limitOrder);
 
-    return model.save().then(() => MyLogger.log('Limit order saved ✔')).catch(err => {
+    return model.save().then(() => {
+
+      MyLogger.log('Limit order saved ✔');
+
+      const current = new Date();
+      const today = new Date(current.getFullYear(), current.getMonth(), current.getDay());
+
+      this.OrderCounterModel.updateOne({ date: today }, { $inc: { counter: 1 } }, { upsert: true }).exec();
+
+    }).catch(err => {
+
       if (err.code === 11000) {
         console.log('Ignored saving an existing order');
       } else {
         console.log(err);
       }
+
     });
   }
 
