@@ -65,7 +65,7 @@ export async function executeOrders(ordersData: ExecutableOrder[], gasPrice: Big
       } else {
 
         ExecuteHelper.Instance.remove(executableOrder.limitOrderData.digest);
-        MyLogger.log(`Gas estimation failed for: ${order}`);
+        // MyLogger.log(`Gas estimation failed for: ${order}`);
 
       }
 
