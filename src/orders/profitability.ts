@@ -1,7 +1,6 @@
 import { BigNumber } from "@ethersproject/bignumber";
 import { ILimitOrder } from "../models/models";
-import { PriceUpdate, PRICE_MULTIPLIER } from "../price-updates/pair-updates";
-import { NetworkPrices } from "../utils/networkPrices";
+import { PriceUpdate, PRICE_MULTIPLIER } from "../pairs/pairUpdates";
 import { getMinRate } from "../utils/price";
 
 

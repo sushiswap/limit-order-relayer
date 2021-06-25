@@ -5,12 +5,22 @@ import { ChainId } from '@sushiswap/sdk';
 dotenv.config();
 
 export const fetchLimitOrderPairs = async function (chainId: ChainId): Promise<string[][]> {
-  return (await axios(`${LAMBDA_URL}/orders/pairs`, {
-    method: 'POST',
-    data: {
-      chainId: chainId
-    }
-  })).data.data.pairs;
+  const fetchFromApi = true;
+
+  if (!fetchFromApi) {
+
+    return _limitOrderPairs;
+
+  } else {
+
+    return (await axios(`${LAMBDA_URL}/orders/pairs`, {
+      method: 'POST',
+      data: {
+        chainId: chainId
+      }
+    })).data.data.pairs;
+
+  }
 }
 
 export const _limitOrderPairs: string[][] = [
@@ -19,7 +29,7 @@ export const _limitOrderPairs: string[][] = [
   ["WETH", "USDC"],
   ["WBTC", "WETH"],
   ["WMATIC", "WETH"],
-  // ["TITAN", "IRON"], can't fetch prices of these tokens directly
+  // ["TITAN", "IRON"], edgecase can't fetch prices of these tokens directly - see networkPrices.ts
   ["WETH", "USDT"],
   ["USDC", "USDT"],
   ["WETH", "DAI"],

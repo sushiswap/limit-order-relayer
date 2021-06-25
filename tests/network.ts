@@ -1,8 +1,8 @@
-import { getLimitOrderPairs } from '../src/utils/watchPairs';
 import { NetworkPrices } from '../src/utils/networkPrices';
 import { IWatchPair } from '../src/models/models';
 import { expect } from 'chai';
-import { PriceUpdate, PRICE_MULTIPLIER } from '../src/price-updates/pair-updates';
+import { getLimitOrderPairs } from '../src/pairs/watchPairs';
+import { PriceUpdate, PRICE_MULTIPLIER } from '../src/pairs/pairUpdates';
 
 describe('Token prices', () => {
   it('Should get price of every token', async () => {

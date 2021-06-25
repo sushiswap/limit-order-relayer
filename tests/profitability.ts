@@ -3,7 +3,7 @@ import { ChainId } from '@sushiswap/sdk';
 import { expect } from 'chai';
 import { ILimitOrder } from '../src/models/models';
 import { maxMarketSell, getOrderEffects, sortOrders, marketSellOutput, getAmountOut, profitableOrders } from '../src/orders/profitability';
-import { PriceUpdate, PRICE_MULTIPLIER } from '../src/price-updates/pair-updates';
+import { PriceUpdate, PRICE_MULTIPLIER } from '../src/pairs/pairUpdates';
 import { NetworkPrices } from '../src/utils/networkPrices';
 import { getOrderPrice, getOrderPriceString, getMinRate } from '../src/utils/price';
 

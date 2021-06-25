@@ -1,7 +1,7 @@
 import { ChainId } from "@sushiswap/sdk";
 import axios from "axios";
 import { BigNumber } from "ethers";
-import { PriceUpdate, PRICE_MULTIPLIER } from "../price-updates/pair-updates";
+import { PriceUpdate, PRICE_MULTIPLIER } from "../pairs/pairUpdates";
 import { MyLogger } from "./myLogger";
 
 export class NetworkPrices {

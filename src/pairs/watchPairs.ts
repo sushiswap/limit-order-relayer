@@ -2,9 +2,9 @@ import { fetchLimitOrderPairs } from '../relayer-config/pairs';
 import { IWatchPair } from '../models/models';
 import DEFAULT_TOKEN_LIST from '@sushiswap/default-token-list';
 import { ChainId } from '@sushiswap/sdk';
-import { getPairAddress } from './pairAddress';
-import { getPairBalances } from '../price-updates/pair-updates';
-import { MyProvider } from './myProvider';
+import { getPairAddress } from '../utils/pairAddress';
+import { MyProvider } from '../utils/myProvider';
+import { getPairBalances } from './pairUpdates';
 
 interface IToken { chainId: number, address: string, name: string, symbol: string, decimals: number, logoUrl?: string };
 export interface ITokenList { name: string, logoURL?: string, keywords: any, timestamp: any, tokens: IToken[], version: any };

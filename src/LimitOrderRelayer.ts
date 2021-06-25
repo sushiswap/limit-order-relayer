@@ -1,13 +1,13 @@
 import { Database } from './database/database';
 import { IExecutedOrder, ILimitOrder, IWatchPair } from './models/models';
-import { PriceUpdate } from './price-updates/pair-updates';
 import { ExecutableOrder, profitableOrders } from './orders/profitability';
 import { Observable, Subject } from 'rxjs';
 import { safeAwait } from './utils/myAwait';
 import { MyLogger } from './utils/myLogger';
 import { NetworkPrices } from './utils/networkPrices';
 import { BigNumber } from 'ethers';
-import { getLimitOrderPairs } from './utils/watchPairs';
+import { getLimitOrderPairs } from './pairs/watchPairs';
+import { PriceUpdate } from './pairs/pairUpdates';
 
 export class LimitOrderRelayer {
 

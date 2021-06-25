@@ -1,5 +1,5 @@
 import { BigNumber } from "@ethersproject/bignumber"
-import { PRICE_MULTIPLIER } from "../price-updates/pair-updates";
+import { PRICE_MULTIPLIER } from "../pairs/pairUpdates";
 
 export function getOrderPrice(amountIn: BigNumber, amountOut: BigNumber) {
   return amountOut.mul(PRICE_MULTIPLIER).mul("1000").div("997").div(amountIn);

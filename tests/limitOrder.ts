@@ -1,14 +1,13 @@
 import { IExecutedOrder, ILimitOrder } from '../src/models/models';
 import { Observable, of } from 'rxjs';
-import { getLimitOrderPairs } from '../src/utils/watchPairs';
+import { getLimitOrderPairs } from '../src/pairs/watchPairs';
 import { BigNumber } from '@ethersproject/bignumber';
-import { PriceUpdate, PRICE_MULTIPLIER } from '../src/price-updates/pair-updates';
 import { LimitOrderRelayer } from '../src/LimitOrderRelayer';
 import { Database } from '../src/database/database';
 import { expect } from 'chai';
 import { ExecutableOrder } from '../src/orders/profitability';
-import { NetworkPrices } from '../src/utils/networkPrices';
 import { MockNetworkPrices } from './profitability';
+import { PriceUpdate, PRICE_MULTIPLIER } from '../src/pairs/pairUpdates';
 
 describe('LimitOrderTest', () => {
   it('Executing 2 Limit Orders', async () => {

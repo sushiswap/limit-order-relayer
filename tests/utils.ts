@@ -1,6 +1,7 @@
 import { BigNumber } from '@ethersproject/bignumber';
 import { ChainId } from '@sushiswap/sdk';
 import { expect } from 'chai';
+import { fetchLimitOrderPairs } from '../src/relayer-config/pairs';
 import { NetworkPrices } from '../src/utils/networkPrices';
 import { getOrderPrice } from '../src/utils/price';
 
@@ -21,4 +22,10 @@ describe('Utils', () => {
     const errIndex = prices.indexOf(undefined);
     expect(errIndex).to.be.equal(-1, `Couldn't fetch gas price for ${supportedChains[errIndex]}`)
   }).timeout(4000);
+
+  it('Should fetch pairs', async () => {
+    const pairs = await fetchLimitOrderPairs(+process.env.CHAINID);
+    expect(pairs.length).to.be.greaterThan(0, "no pairs were fetched");
+    expect(typeof pairs[0][0]).to.be.eq("string", "no pairs were fetched");
+  })
 });
