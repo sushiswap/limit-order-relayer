@@ -18,7 +18,7 @@ export const fetchLimitOrderPairs = async function (chainId: ChainId): Promise<s
       data: {
         chainId: chainId
       }
-    })).data.data.pairs;
+    })).data.data.pairs.map(pair => [pair.token0.symbol, pair.token1.symbol]);
 
   }
 }

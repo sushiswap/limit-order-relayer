@@ -76,7 +76,7 @@ export class Database {
 
   public async saveLimitOrder(limitOrder: ILimitOrder): Promise<ILimitOrder | void> {
 
-    const model = new this.LimitOrderModel(limitOrder);
+    const model = new this.LimitOrderModel({ ...limitOrder, valid: true });
 
     return model.save().then(() => {
 
@@ -90,9 +90,9 @@ export class Database {
     }).catch(err => {
 
       if (err.code === 11000) {
-        console.log('Ignored saving an existing order');
+        MyLogger.log('Ignored saving an existing order');
       } else {
-        console.log(err);
+        MyLogger.log(`...${err.toString().substring(0, 100)}`);
       }
 
     });
@@ -102,7 +102,7 @@ export class Database {
   // since price has been changed to a string (due to overflow errors) we cannot query with "price: { $lt: price.toString() }"
   public async getLimitOrders(price: BigNumber, pairAddress: string, tokenIn: string): Promise<ILimitOrder[]> {
     const currentTime = Math.floor(new Date().getTime() / 1000);
-    const orders: ILimitOrder[] = await this.LimitOrderModel.find({ pairAddress, 'order.tokenIn': tokenIn, 'order.startTime': { $lt: currentTime }, 'order.endTime': { $gt: currentTime } }).exec();
+    const orders: ILimitOrder[] = await this.LimitOrderModel.find({ valid: true, pairAddress, 'order.tokenIn': tokenIn, 'order.startTime': { $lt: currentTime }, 'order.endTime': { $gt: currentTime } }).exec();
     return orders;
   }
 
@@ -110,8 +110,8 @@ export class Database {
     return this.LimitOrderModel.find({});
   }
 
-  public async deleteLimitOrders(orders: ILimitOrder[]): Promise<{ ok?: number, deletedCount?: number }> {
-    return this.LimitOrderModel.deleteMany({ digest: { $in: orders.map(order => order.digest) } }).exec();
+  public async invalidateLimitOrders(orders: ILimitOrder[]): Promise<{ n?: number }> {
+    return this.LimitOrderModel.updateMany({ digest: { $in: orders.map(order => order.digest) } }, { valid: false }).exec();
   }
 
   public async saveExecutedOrder(orders: IExecutedOrder[]): Promise<IExecutedOrder[]> {

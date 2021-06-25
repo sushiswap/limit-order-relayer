@@ -35,9 +35,9 @@ export async function copyRemoteOrders() {
 
   await database.saveLimitOrders(orders);
 
-  const storedOrders = await database.getAllLimitOrders();
+  // const storedOrders = await database.getAllLimitOrders();
 
-  await refreshOrderStatus(storedOrders, false);
+  // await refreshOrderStatus(storedOrders, false);
 
 }
 

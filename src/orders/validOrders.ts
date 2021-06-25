@@ -63,7 +63,7 @@ export async function refreshOrderStatus(orders: ILimitOrder[], fetchUserBalance
 
   }));
 
-  if (invalidOrders.length > 0) Database.Instance.deleteLimitOrders(invalidOrders).then(info => MyLogger.log(`Deleted ${info.deletedCount} orders`));
+  if (invalidOrders.length > 0) Database.Instance.invalidateLimitOrders(invalidOrders).then(info => MyLogger.log(`Invalidated ${invalidOrders.length} orders`));
 
   return validOrders;
 

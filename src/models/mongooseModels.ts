@@ -50,6 +50,7 @@ export const limitOrderModel = new Schema({
     chainId: Number
   },
   pairAddress: String,
+  valid: Boolean
 }, { timestamps: true });
 
 export const executedOrderModel = new Schema({

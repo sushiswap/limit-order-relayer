@@ -39,7 +39,6 @@ export class LimitOrderRelayer {
 
   public async init() {
 
-
     const [, dbError] = await safeAwait(this.database.connectDB());
 
     if (dbError) return MyLogger.log(`Failed to connect to db: ${dbError}`);

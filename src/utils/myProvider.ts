@@ -1,6 +1,5 @@
 import { NonceManager } from "@ethersproject/experimental";
 import { providers, Wallet } from "ethers";
-import { MyLogger } from "./myLogger";
 
 export class MyProvider {
 

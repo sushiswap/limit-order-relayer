@@ -5,6 +5,7 @@ import { ChainId } from '@sushiswap/sdk';
 import { getPairAddress } from '../utils/pairAddress';
 import { MyProvider } from '../utils/myProvider';
 import { getPairBalances } from './pairUpdates';
+import { MyLogger } from '../utils/myLogger';
 
 interface IToken { chainId: number, address: string, name: string, symbol: string, decimals: number, logoUrl?: string };
 export interface ITokenList { name: string, logoURL?: string, keywords: any, timestamp: any, tokens: IToken[], version: any };
@@ -60,9 +61,8 @@ export const getLimitOrderPairs = async (): Promise<IWatchPair[]> => {
 
   }));
 
-  console.log(`Running on ${watchPairs.map(wp => ` ${wp.token0.symbol}-${wp.token1.symbol}`)}`)
+  MyLogger.log(`Running on ${watchPairs.map(wp => ` ${wp.token0.symbol}-${wp.token1.symbol}`)}`)
 
   return watchPairs;
 
 };
-
