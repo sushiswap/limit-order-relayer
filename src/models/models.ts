@@ -35,7 +35,8 @@ export interface IExecutedOrder {
   order: ILimitOrderData,
   digest: string,
   txHash: string,
-  fillAmount: string
+  fillAmount: string,
+  status: number
 }
 
 export interface IExecutedOrderModel extends IExecutedOrder, Document { };

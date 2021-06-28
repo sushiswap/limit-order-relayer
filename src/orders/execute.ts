@@ -57,7 +57,7 @@ export async function executeOrders(ordersData: ExecutableOrder[], gasPrice: Big
           digest: executableOrder.limitOrderData.digest,
           fillAmount: executableOrder.inAmount.toString(),
           txHash: transaction.hash,
-
+          status: -1
         });
 
         MyLogger.log(`${transaction.hash}, gasPrice: ${parseFloat(gasPrice.div(1e8).toString()) / 10}, nonce: ${transaction.nonce}`);

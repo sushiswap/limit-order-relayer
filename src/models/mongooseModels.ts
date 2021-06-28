@@ -76,6 +76,7 @@ export const executedOrderModel = new Schema({
   },
   fillAmount: String,
   txHash: String,
+  status: Number, // -1 unknown, 0 failed, 1 passed
 }, { timestamps: true });
 
 export const orderCounterModel = new Schema({
