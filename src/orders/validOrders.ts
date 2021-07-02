@@ -1,11 +1,10 @@
-import { getBentoContract, getVerifyingContract, ILimitOrderData, LimitOrder } from "limitorderv2-sdk";
+import { ILimitOrderData, LimitOrder } from "limitorderv2-sdk";
 import { ILimitOrder, IWatchPair } from "../models/models";
 import { utils, Contract, BigNumber } from 'ethers';
-import stopLimitOrderABI from '../abis/stopLimitOrder';
-import bentoBox from "../abis/bentoBox";
 import { MyProvider } from "../utils/myProvider";
 import { Database } from "../database/database";
 import { MyLogger } from "../utils/myLogger";
+import HELPER from "../abis/helper";
 
 /**
  *
@@ -15,53 +14,13 @@ import { MyLogger } from "../utils/myLogger";
  * This is called just before we try to execute orders
  * Check if the order is (still) valid & update the order status in the database
  */
-export async function refreshOrderStatus(orders: ILimitOrder[], fetchUserBalance = true): Promise<ILimitOrder[]> {
+export async function refreshOrderStatus(limitOrders: ILimitOrder[]): Promise<ILimitOrder[]> {
 
-  if (orders.length === 0) return [];
+  const orderStatuses = await getOrderStatus(limitOrders, false);
 
-  const validOrders = [];
-  const invalidOrders = [];
+  const validOrders = orderStatuses.filter(({ status }) => status === OrderStatus.VALID).map(({ limitOrder }) => limitOrder);
 
-  const provider = MyProvider.Instance.provider;
-
-  const stopLimitOrderContract = new Contract(getVerifyingContract(+process.env.CHAINID), stopLimitOrderABI, provider);
-  const bentoBoxContract = new Contract(getBentoContract(+process.env.CHAINID), bentoBox, provider);
-
-  await Promise.all(orders.map(async (order) => {
-
-    const limitOrder = LimitOrder.getLimitOrder(order.order);
-
-    let filled, filledAmount, canceled, balance;
-
-    try {
-
-      [filled, filledAmount] = await isFilled(limitOrder, stopLimitOrderContract);
-      canceled = await isCanceled(limitOrder, stopLimitOrderContract);
-
-      if (fetchUserBalance) {
-        // Use the current user balance. This is problematic as the user may have another order that we will execute that will use up this balance
-        balance = await getUserBalance(limitOrder.tokenInAddress, limitOrder.maker, bentoBoxContract);
-        order.userBalance = balance.toString();
-      }
-
-    } catch (error) {
-
-      return MyLogger.log(`Couldn't refresh order status ${error.toString().substring(0, 100)} ...`)
-
-    }
-
-    order.filledAmount = filledAmount.toString();
-
-    const expired = isExpired(limitOrder);
-    const live = isLive(limitOrder);
-
-    if (!filled && !canceled && !expired && live) {
-      validOrders.push(order);
-    } else {
-      invalidOrders.push(order);
-    }
-
-  }));
+  const invalidOrders = orderStatuses.filter(({ status }) => status === OrderStatus.INVALID).map(({ limitOrder }) => limitOrder);
 
   if (invalidOrders.length > 0) Database.Instance.invalidateLimitOrders(invalidOrders).then(info => MyLogger.log(`Invalidated ${invalidOrders.length} orders`));
 
@@ -69,22 +28,91 @@ export async function refreshOrderStatus(orders: ILimitOrder[], fetchUserBalance
 
 }
 
+export async function refreshGroupOrderStatus(pairLimitOrders: ILimitOrder[][][], getStatus = getOrderStatus): Promise<ILimitOrder[][][]> {
 
-export async function getUserBalance(tokenIn, maker, bentoBoxContract: Contract) {
-  return bentoBoxContract.balanceOf(tokenIn, maker);
+  const flattened = [];
+
+  pairLimitOrders.forEach(sellAndBuyOrders => sellAndBuyOrders.forEach(limitOrders => flattened.push(...limitOrders)));
+
+  const orderStatuses = await getStatus(flattened, true);
+
+  const regrouped: { status: OrderStatus, limitOrder: ILimitOrder }[][][] = [];
+
+  let idx = 0;
+
+  pairLimitOrders.forEach((sellAndBuyOrders, i) => sellAndBuyOrders.forEach((limitOrders, j) => limitOrders.forEach((limitOrder, k) => {
+
+    if (!regrouped[i]) regrouped[i] = [[], []]; // expect j < 2 to always be true
+
+    regrouped[i][j][k] = orderStatuses[idx++];
+
+  })));
+
+  return regrouped.map(sellAndBuyOrders => sellAndBuyOrders.map(orders => orders.filter(({ status }) => status === OrderStatus.VALID).map(({ limitOrder }) => limitOrder)));
+
 }
 
-export async function isFilled(limitOrder: LimitOrder, stopLimitOrderContract: Contract): Promise<[boolean, BigNumber]> {
+export enum OrderStatus { INVALID, VALID, PENDING };
 
-  const orderStatus = await stopLimitOrderContract.orderStatus(limitOrder.getTypeHash());
+export async function getOrderStatus(limitOrders: ILimitOrder[], fetchUserBalance: boolean): Promise<{ status: OrderStatus, limitOrder: ILimitOrder }[]> {
 
-  return [orderStatus.toString() === limitOrder.amountInRaw, BigNumber.from(orderStatus)];
+  if (limitOrders.length === 0) return [];
 
-}
+  const status: OrderStatus[] = [];
 
-export async function isCanceled(limitOrder: LimitOrder, stopLimitOrderContract: Contract): Promise<boolean> {
+  const provider = MyProvider.Instance.provider;
 
-  return stopLimitOrderContract.cancelledOrder(limitOrder.maker, limitOrder.getTypeHash());
+  const helper = new Contract(process.env.HELPER, HELPER, provider);
+
+  let info: { filledAmount: BigNumber, cancelled: boolean, makersBentoBalance?: BigNumber }[];
+
+  if (fetchUserBalance) {
+
+    info = await helper.getOrderInfoWithBalance(
+      limitOrders.map(limitOrder => limitOrder.order.maker),
+      limitOrders.map(limitOrder => limitOrder.order.tokenIn),
+      limitOrders.map(limitOrder => limitOrder.digest)
+    );
+
+  } else {
+
+    info = await helper.getOrderInfo(
+      limitOrders.map(limitOrder => limitOrder.order.maker),
+      limitOrders.map(limitOrder => limitOrder.digest)
+    );
+
+  }
+
+  limitOrders.forEach((_limitOrder, i) => {
+
+    const limitOrder = LimitOrder.getLimitOrder(_limitOrder.order);
+
+    const expired = isExpired(limitOrder);
+    const live = isLive(limitOrder);
+    const canceled = info[i].cancelled;
+    const filledAmount = info[i].filledAmount;
+    const filled = filledAmount.eq(limitOrder.amountInRaw);
+
+    _limitOrder.filledAmount = filledAmount.toString();
+
+    if (fetchUserBalance) _limitOrder.userBalance = info[i].makersBentoBalance.toString();
+
+    if (!filled && !canceled && !expired && live) {
+      status.push(OrderStatus.VALID);
+    } else if (filled || canceled || expired) {
+      status.push(OrderStatus.INVALID);
+    } else if (!live) {
+      status.push(OrderStatus.PENDING);
+    }
+
+  });
+
+  return limitOrders.map((limitOrder, i) => {
+    return {
+      status: status[i],
+      limitOrder
+    };
+  });
 
 }
 

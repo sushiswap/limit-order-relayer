@@ -1,11 +1,23 @@
-# Execute limit orders on Sushiswap.
+# Execute limit orders on Sushiswap
 
-## Run service 
+## Run service
+
 `npm run start`
 
+## Run service using forever
+
+`npm run forever-<chainName>`
+
+
 ## Test service
+
 `npm run test`
 
+## Migrate database 
+
+`npm run copy-remote`
+
+## Configuration
 
 See '.example.env' for configuration.
 

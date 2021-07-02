@@ -4,6 +4,8 @@ import { expect } from 'chai';
 import { fetchLimitOrderPairs } from '../src/relayer-config/pairs';
 import { NetworkPrices } from '../src/utils/networkPrices';
 import { getOrderPrice } from '../src/utils/price';
+import { OrderStatus, refreshGroupOrderStatus } from '../src/orders/validOrders';
+
 
 describe('Utils', () => {
   it('Should get price', async () => {
@@ -27,5 +29,25 @@ describe('Utils', () => {
     const pairs = await fetchLimitOrderPairs(+process.env.CHAINID);
     expect(pairs.length).to.be.greaterThan(0, "no pairs were fetched");
     expect(typeof pairs[0][0]).to.be.eq("string", "no pairs were fetched");
+  })
+  it('Should maintain nested array structure', async () => {
+    const data: any[][][] = [
+      [['a'], ['b']],
+      [['c'], ['d', 'e', 'f']],
+      [[], ['g']],
+      [['h', 'i', 'j', 'k'], []]
+    ];
+
+    const output = await refreshGroupOrderStatus(data, ((input) => input.map((a) => { return { status: OrderStatus.VALID, limitOrder: a } })) as any);
+
+    expect(output.length).to.be.eq(data.length);
+
+    data.forEach((row, i) => {
+      expect(row.length).to.be.eq(data[i].length);
+      row.forEach((list, j) => {
+        expect(list.length).to.be.eq(data[i][j].length);
+      });
+    });
+
   })
 });

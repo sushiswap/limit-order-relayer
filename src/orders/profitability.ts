@@ -90,7 +90,7 @@ export function sortOrders(orders: ILimitOrder[]) {
  * Calculate the correct fill amount, the profit amount, new pool balances...
  */
 export function getOrderEffects(orderData: ILimitOrder, sellingToken0: boolean, priceUpdate: PriceUpdate, token0EthPrice: BigNumber, token1EthPrice: BigNumber):
-  false | { partialFill: BigNumber, inAmount: BigNumber, outAmount: BigNumber, outDiff: BigNumber, minAmountIn: BigNumber, profitGwei: BigNumber, newPrice: BigNumber, newToken0Amount: BigNumber, newToken1Amount: BigNumber } {
+  false | { partialFill: boolean, inAmount: BigNumber, outAmount: BigNumber, outDiff: BigNumber, minAmountIn: BigNumber, profitGwei: BigNumber, newPrice: BigNumber, newToken0Amount: BigNumber, newToken1Amount: BigNumber } {
 
   const _inAmount = BigNumber.from(orderData.order.amountIn);
 
@@ -107,15 +107,17 @@ export function getOrderEffects(orderData: ILimitOrder, sellingToken0: boolean, 
     orderData.userBalance
   );
 
-  if (inAmount.eq("0")) return false;
+  if (inAmount.lte("0")) return false;
 
-  const partialFill = inAmount.lt(_inAmount);
+  const partialFill: boolean = inAmount.lt(_inAmount);
 
   const minRate = getMinRate(orderData.order.amountIn, orderData.order.amountOut);
 
-  const outDiff = outAmount.sub(inAmount.mul(minRate).div(PRICE_MULTIPLIER)); // relayer profit in out tokens
+  const minOutAmount = inAmount.mul(minRate).div(PRICE_MULTIPLIER);
 
-  const minAmountIn = getMinAmountIn(BigNumber.from(orderData.order.amountOut), sellingToken0, priceUpdate.token0.poolBalance, priceUpdate.token1.poolBalance);
+  const outDiff = outAmount.sub(minOutAmount); // relayer profit in out tokens
+
+  const minAmountIn = getMinAmountIn(minOutAmount, sellingToken0, priceUpdate.token0.poolBalance, priceUpdate.token1.poolBalance);
 
   let profitGwei: BigNumber;
 
@@ -129,6 +131,7 @@ export function getOrderEffects(orderData: ILimitOrder, sellingToken0: boolean, 
     const price = BigNumber.from(10).mul(sellingToken0 ? token1EthPrice : token0EthPrice);
     const tokenDecimalPadding = BigNumber.from("10").pow(orderData.order.tokenOutDecimals);
     profitGwei = outDiff.mul(price).div(tokenDecimalPadding);
+
   }
 
 
@@ -159,7 +162,7 @@ export function maxMarketSell(
 
   if (currentPrice.lt(limitPrice)) return { inAmount: BigNumber.from("0") } as any;
 
-  inAmount = inAmount.sub(filledAmount);
+  inAmount = inAmount.sub(filledAmount || '0');
 
   if (!!userBalance) {
     inAmount = inAmount.lt(userBalance) ? inAmount : BigNumber.from(userBalance);
@@ -229,7 +232,7 @@ export function getAmountOut(amountIn: BigNumber, reserveIn: BigNumber, reserveO
   return numerator.div(denominator);
 }
 
-export function getMinAmountIn(amountOut: BigNumber, sellingToken0: boolean, reserve0: BigNumber, reserve1: BigNumber) { // TODO test
+export function getMinAmountIn(amountOut: BigNumber, sellingToken0: boolean, reserve0: BigNumber, reserve1: BigNumber) {
   if (sellingToken0) {
     return getAmountIn(amountOut, reserve0, reserve1);
   } else {

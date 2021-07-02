@@ -80,7 +80,7 @@ export const executedOrderModel = new Schema({
 }, { timestamps: true });
 
 export const orderCounterModel = new Schema({
-  date: Number,
+  timestamp: Number,
   counter: Number
 });
 
@@ -110,7 +110,15 @@ limitOrderModel.pre<ILimitOrderModel>("save", function (next) {
 
   this.pairAddress = getPairAddress(this.order.tokenIn, this.order.tokenOut);
 
+  const startTime = this.order.startTime.toString();
+  const endTime = this.order.endTime.toString();
+
+  this.order.startTime = parseInt(startTime);
+  this.order.endTime = parseInt(endTime);
+
   if (this.price.toString()[0] == '-') throw new Error('Price overflow');
+  if (this.order.startTime.toString() !== startTime) throw new Error('start time overflow');
+  if (this.order.endTime.toString() !== endTime) throw new Error('end time overflow');
 
   next();
 

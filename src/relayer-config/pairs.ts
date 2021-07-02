@@ -5,7 +5,8 @@ import { ChainId } from '@sushiswap/sdk';
 dotenv.config();
 
 export const fetchLimitOrderPairs = async function (chainId: ChainId): Promise<string[][]> {
-  const fetchFromApi = true;
+
+  const fetchFromApi = false;
 
   if (!fetchFromApi) {
 
@@ -24,27 +25,27 @@ export const fetchLimitOrderPairs = async function (chainId: ChainId): Promise<s
 }
 
 export const _limitOrderPairs: string[][] = [
-  ["USDC", "IRON"],
-  ["WMATIC", "TITAN"],
-  ["WETH", "USDC"],
-  ["WBTC", "WETH"],
+  //["USDC", "IRON"],
+  //["WMATIC", "TITAN"],
+  //["WETH", "USDC"],
+  //["WBTC", "WETH"],
   ["WMATIC", "WETH"],
-  // ["TITAN", "IRON"], edgecase can't fetch prices of these tokens directly - see networkPrices.ts
-  ["WETH", "USDT"],
-  ["USDC", "USDT"],
-  ["WETH", "DAI"],
-  ["LINK", "WETH"],
-  ["WETH", "AAVE"],
-  ["USDC", "DAI"],
-  ["WMATIC", "USDC"],
-  ["FRAX", "USDC"],
-  ["WMATIC", "FISH"],
-  ["CRV", "WETH"],
-  ["SNX", "USDC"],
-  ["FRAX", "FXS"],
-  ["WETH", "DHT"],
-  ["SUSHI", "WETH"],
-  ["GRT", "WETH"]
+  // ["TITAN", "IRON"], edgecase can't fetch prices of these tokens directly - see how prices are fetched in utils/networkPrices.ts
+  // ["WETH", "USDT"],
+  // ["USDC", "USDT"],
+  // ["WETH", "DAI"],
+  // ["LINK", "WETH"],
+  // ["WETH", "AAVE"],
+  // ["USDC", "DAI"],
+  // ["WMATIC", "USDC"],
+  // ["FRAX", "USDC"],
+  // ["WMATIC", "FISH"],
+  // ["CRV", "WETH"],
+  // ["SNX", "USDC"],
+  // ["FRAX", "FXS"],
+  // ["WETH", "DHT"],
+  // ["SUSHI", "WETH"],
+  // ["GRT", "WETH"]
 ]
 
 export const getDesiredProfitToken = function (chainId: ChainId): string[] {

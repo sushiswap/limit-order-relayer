@@ -1,6 +1,7 @@
 import { BigNumber } from '@ethersproject/bignumber';
 import { ChainId } from '@sushiswap/sdk';
 import { expect } from 'chai';
+import { MockDatabase, mockPriceUpdate, twoProfitableOrders, unprofitableOrder } from './limitOrder';
 import { ILimitOrder } from '../src/models/models';
 import { maxMarketSell, getOrderEffects, sortOrders, marketSellOutput, getAmountOut, profitableOrders } from '../src/orders/profitability';
 import { PriceUpdate, PRICE_MULTIPLIER } from '../src/pairs/pairUpdates';
@@ -36,8 +37,8 @@ const profitableSellOrder: ILimitOrder = {
     amountIn: "5000000000000000000000", // 5k dai
     amountOut: "2000000000000000000", // 2 weth
     recipient: "0x6B175474E89094C44Da98b954EedeAC495271d0F",
-    startTime: 0,
-    endTime: 9999999999999,
+    startTime: '0',
+    endTime: '9999999999999',
     stopPrice: "0",
     oracleAddress: "0x6B175474E89094C44Da98b954EedeAC495271d0F",
     oracleData: "",
@@ -260,6 +261,12 @@ describe('Profitability', () => {
   it('Should sort tokens by lowest price first', () => {
     const orders = sortOrders([{ price: "1000" }, { price: "999" }] as ILimitOrder[]);
     expect(orders[0].price).to.be.eq("999", "Failed to sort orders by lowest price");
+  });
+
+  it('Should filter orders by price', async () => {
+
+    expect(MockDatabase.Instance.filterLimitOrdersByPrice([...twoProfitableOrders, unprofitableOrder], mockPriceUpdate.token1.price).length).to.be.eq(2, "did not filter out unprofitable orders correctly");
+
   });
 });
 

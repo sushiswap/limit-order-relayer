@@ -1,4 +1,4 @@
-import { BigNumber } from "ethers";
+import { ChainId } from "@sushiswap/sdk";
 import { ILimitOrderData } from "limitorderv2-sdk";
 import { Document } from "mongoose";
 
@@ -23,7 +23,28 @@ export interface IWatchPairModel extends IWatchPair, Document { };
 export interface ILimitOrder {
   price: string,
   digest: string,
-  order: ILimitOrderData,
+  order: {
+    maker: string;
+    tokenIn: string;
+    tokenOut: string;
+    tokenInDecimals: number;
+    tokenOutDecimals: number;
+    tokenInSymbol: string;
+    tokenOutSymbol: string;
+    amountIn: string;
+    amountOut: string;
+    recipient: string;
+    startTime: number | string;
+    endTime: number | string;
+    stopPrice?: string;
+    oracleAddress?: string;
+    oracleData?: string;
+    v: number;
+    r: string;
+    s: string;
+    chainId: ChainId;
+    orderTypeHash?: string;
+  },
   pairAddress?: string,
   filledAmount?: string,
   userBalance?: string,
@@ -42,7 +63,7 @@ export interface IExecutedOrder {
 export interface IExecutedOrderModel extends IExecutedOrder, Document { };
 
 export interface IOrderCounter {
-  date: number,
+  timestamp: number,
   counter: number
 }
 

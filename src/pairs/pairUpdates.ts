@@ -1,7 +1,7 @@
 import { IWatchPair } from "../models/models";
 import { BigNumber, ethers } from "ethers";
 import { Observable, Subject } from 'rxjs';
-import ERC20_ABI from '../abis/erc20';
+import HELPER from '../abis/helper';
 import { MyProvider } from "../utils/myProvider";
 import { MyLogger } from "../utils/myLogger";
 
@@ -23,68 +23,61 @@ export interface PriceUpdate {
   }
 }
 
-export function watchSushiwapPairs(watchPairs: IWatchPair[]): Observable<PriceUpdate> {
+export function watchSushiwapPairs(watchPairs: IWatchPair[]): Observable<PriceUpdate[]> {
 
   const provider = MyProvider.Instance.provider;
 
-  const updates = new Subject<PriceUpdate>();
+  const updates = new Subject<PriceUpdate[]>();
 
-  watchPairs.forEach(async pair => {
+  const updatePrices = async () => {
 
-    fetchPairData(pair, provider).then(update => updates.next(update)).catch(e => MyLogger.log(`Failed to fetch pool price ${e.toString().substring(0, 100)} ...`)); // do it once at the beginning
+    const poolsInfo = await getPoolBalances(watchPairs, provider);
 
-    if (MyProvider.Instance.usingSocket) {
+    const _updates = [];
 
-      const filter = {
-        address: pair.pairAddress,
-        topics: [ethers.utils.id("Swap(address,uint256,uint256,uint256,uint256,address)")]
+    poolsInfo.forEach((poolInfo, i) => {
+
+      const pair = watchPairs[i];
+
+      const token0 = {
+        price: (poolInfo.token1.mul(PRICE_MULTIPLIER)).div(poolInfo.token0),
+        poolBalance: poolInfo.token0,
+        address: pair.token0.address,
+        addressMainnet: pair.token0.addressMainnet
       };
 
-      MyProvider.Instance.socketProvider.on(filter, async () => {
-        fetchPairData(pair, provider).then(update => updates.next(update)).catch(e => MyLogger.log(`Failed to fetch pool price ${e.toString().substring(0, 100)} ...`));
-      });
+      const token1 = {
+        price: (poolInfo.token0.mul(PRICE_MULTIPLIER)).div(poolInfo.token1),
+        poolBalance: poolInfo.token1,
+        address: pair.token1.address,
+        addressMainnet: pair.token1.addressMainnet
+      };
 
-    } else {
+      _updates.push({ token0, token1, pair });
 
-      setInterval(async () => {
-        fetchPairData(pair, provider).then(update => updates.next(update)).catch(e => MyLogger.log(`Failed to fetch pool price ${e.toString().substring(0, 100)} ...`));
-      }, +process.env.INTERVAL_MINUTES * 60 * 1000); // every x min
+    });
 
-    }
+    updates.next(_updates);
 
-  });
+  }
+
+  updatePrices(); // once at the start
+
+  setInterval(async () => {
+
+    updatePrices().then().catch(e => MyLogger.log(`Failed to fetch pool price ${e.toString().substring(0, 100)} ...`));
+
+  }, +process.env.INTERVAL_MINUTES * 60 * 1000); // then every x min
 
   return updates;
 }
 
-async function fetchPairData(pair: IWatchPair, provider: ethers.providers.Provider): Promise<PriceUpdate> {
+export async function getPoolBalances(pairs: IWatchPair[], provider: ethers.providers.Provider): Promise<{ token0: BigNumber, token1: BigNumber }[]> {
 
-  const { token0Balance, token1Balance } = await getPairBalances(pair, provider);
+  const helper = new ethers.Contract(process.env.HELPER, HELPER, provider);
 
-  const token0 = {
-    price: (token1Balance.mul(PRICE_MULTIPLIER)).div(token0Balance),
-    poolBalance: token0Balance,
-    address: pair.token0.address,
-    addressMainnet: pair.token0.addressMainnet
-  };
+  const poolInfos = await helper.getPoolInfo(pairs.map(pair => pair.token0.address), pairs.map(pair => pair.token1.address));
 
-  const token1 = {
-    price: (token0Balance.mul(PRICE_MULTIPLIER)).div(token1Balance),
-    poolBalance: token1Balance,
-    address: pair.token1.address,
-    addressMainnet: pair.token1.addressMainnet
-  };
-
-  return { pair, token0, token1 };
-}
-
-export async function getPairBalances(pair: IWatchPair, provider: ethers.providers.Provider) {
-
-  const token0 = new ethers.Contract(pair.token0.address, ERC20_ABI, provider);
-  const token1 = new ethers.Contract(pair.token1.address, ERC20_ABI, provider);
-
-  const [token0Balance, token1Balance] = await Promise.all([token0.balanceOf(pair.pairAddress), token1.balanceOf(pair.pairAddress)]);
-
-  return { token0Balance, token1Balance };
+  return poolInfos.map(info => { return { token0: info.tokenAPoolBalance, token1: info.tokenBPoolBalance } });
 
 }

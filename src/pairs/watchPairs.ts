@@ -4,7 +4,7 @@ import DEFAULT_TOKEN_LIST from '@sushiswap/default-token-list';
 import { ChainId } from '@sushiswap/sdk';
 import { getPairAddress } from '../utils/pairAddress';
 import { MyProvider } from '../utils/myProvider';
-import { getPairBalances } from './pairUpdates';
+import { getPoolBalances } from './pairUpdates';
 import { MyLogger } from '../utils/myLogger';
 
 interface IToken { chainId: number, address: string, name: string, symbol: string, decimals: number, logoUrl?: string };
@@ -45,13 +45,7 @@ export const getLimitOrderPairs = async (): Promise<IWatchPair[]> => {
         pairAddress: getPairAddress(token0.address, token1.address)
       }
 
-      const { token0Balance, token1Balance } = await getPairBalances(watchPair, MyProvider.Instance.provider);
-
-      if (token0Balance.gt(0) && token1Balance.gt(0)) {
-
-        watchPairs.push(watchPair);
-
-      }
+      watchPairs.push(watchPair);
 
     } else {
 
@@ -61,8 +55,17 @@ export const getLimitOrderPairs = async (): Promise<IWatchPair[]> => {
 
   }));
 
-  MyLogger.log(`Running on ${watchPairs.map(wp => ` ${wp.token0.symbol}-${wp.token1.symbol}`)}`)
+  const poolBalances = await getPoolBalances(watchPairs, MyProvider.Instance.provider);
 
-  return watchPairs;
+  const pairs = watchPairs.filter((pair, i) => {
+
+    if (!poolBalances[i].token0.gt("0")) throw new Error(`Tokens aren't part of a pool: ${pair.token0.symbol} ${pair.token1.symbol}`);
+    return true;
+
+  });
+
+  MyLogger.log(`Running on ${pairs.map(wp => ` ${wp.token0.symbol}-${wp.token1.symbol}`)}`)
+
+  return pairs;
 
 };

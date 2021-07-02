@@ -1,5 +1,4 @@
-import { ChainId } from "@sushiswap/sdk";
-import { BigNumber, ethers, providers } from "ethers";
+import { BigNumber } from "ethers";
 import { FillLimitOrder, getAdvancedReceiver, LimitOrder } from "limitorderv2-sdk";
 import { IExecutedOrder } from "../models/models";
 import { ExecutableOrder } from "./profitability";
@@ -8,8 +7,11 @@ import { getDesiredProfitToken } from '../relayer-config/pairs';
 import { MyProvider } from "../utils/myProvider";
 import { MyLogger } from "../utils/myLogger";
 import { safeAwait } from "../utils/myAwait";
+import { ChainId } from "@sushiswap/sdk";
 
 export async function executeOrders(ordersData: ExecutableOrder[], gasPrice: BigNumber): Promise<IExecutedOrder[]> {
+
+  const forceExecution = false;
 
   const executedOrders: IExecutedOrder[] = [];
 
@@ -44,9 +46,9 @@ export async function executeOrders(ordersData: ExecutableOrder[], gasPrice: Big
 
     if (!alreadyExecuted) {
 
-      const [data, error] = await safeAwait(fillOrder.fillOrder(signer, { forceExecution: false, gasPrice: gasPrice, open: false }));
+      const [data, error] = await safeAwait(fillOrder.fillOrder(signer, { forceExecution, gasPrice: gasPrice, open: false }));
 
-      if (error) return MyLogger.log(`Couldn't execute order ${error.toString().substring(0, 200)} ...`);
+      if (error) return MyLogger.log(`Couldn't execute order ${error.toString().substring(0, 300)} ...`);
 
       const { executed, transaction } = data;
 
@@ -65,7 +67,7 @@ export async function executeOrders(ordersData: ExecutableOrder[], gasPrice: Big
       } else {
 
         ExecuteHelper.Instance.remove(executableOrder.limitOrderData.digest);
-        // MyLogger.log(`Gas estimation failed for: ${order}`);
+        MyLogger.log(`Gas estimation failed for: ${executableOrder.limitOrderData.digest}`);
 
       }
 

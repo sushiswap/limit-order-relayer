@@ -47,32 +47,9 @@ export class Database {
     if (this.database) Mongoose.disconnect();
   };
 
-  /* public async setWatchPairs(): Promise<IWatchPair[] | void> {
-    await this.dropPairs();
-    return this.saveWatchPairs(await getLimitOrderPairs());
-  } */
-
-  /* protected async dropPairs() {
-    await this.WatchPairModel.deleteMany({}).exec();
-  } */
-
   public async saveLimitOrders(limitOrders: ILimitOrder[]): Promise<(ILimitOrder | void)[]> {
     return Promise.all(limitOrders.map(order => this.saveLimitOrder(order)));
   }
-
-  /* public saveWatchPairs(watchPairs: IWatchPair[]): Promise<IWatchPair[] | void> {
-
-    return Promise.all(watchPairs.map(async pair => {
-
-      const model = new this.WatchPairModel(pair);
-
-      model.token0 = pair.token0;
-      model.token1 = pair.token1;
-
-      return model.save();
-
-    }));
-  } */
 
   public async saveLimitOrder(limitOrder: ILimitOrder): Promise<ILimitOrder | void> {
 
@@ -83,9 +60,9 @@ export class Database {
       MyLogger.log('Limit order saved ✔');
 
       const current = new Date();
-      const today = (new Date(current.getFullYear(), current.getMonth(), current.getDay())).getTime();
+      const today = (new Date(current.getFullYear(), current.getMonth(), current.getDate())).getTime();
 
-      this.OrderCounterModel.updateOne({ date: today }, { $inc: { counter: 1 } }, { upsert: true }).exec();
+      this.OrderCounterModel.updateOne({ timestamp: today }, { $inc: { counter: 1 } }, { upsert: true }).exec();
 
     }).catch(err => {
 
@@ -99,15 +76,30 @@ export class Database {
   }
 
 
-  // since price has been changed to a string (due to overflow errors) we cannot query with "price: { $lt: price.toString() }"
-  public async getLimitOrders(price: BigNumber, pairAddress: string, tokenIn: string): Promise<ILimitOrder[]> {
+  // since price has been changed to a string (due to overflow errors with MongoseLong) we cannot query with "price: { $lt: price.toString() }"
+  public async getLimitOrders(tokenInPrice: BigNumber, pairAddress: string, tokenIn: string): Promise<ILimitOrder[]> {
+
     const currentTime = Math.floor(new Date().getTime() / 1000);
-    const orders: ILimitOrder[] = await this.LimitOrderModel.find({ valid: true, pairAddress, 'order.tokenIn': tokenIn, 'order.startTime': { $lt: currentTime }, 'order.endTime': { $gt: currentTime } }).exec();
-    return orders;
+
+    const limitOrders: ILimitOrder[] = (await this.LimitOrderModel.find({
+      valid: true,
+      pairAddress,
+      'order.tokenIn': tokenIn,
+      'order.startTime': { $lt: currentTime },
+      'order.endTime': { $gt: currentTime }
+    })).map(mongooseDoc => mongooseDoc.toObject());
+
+    const mappedOrders = limitOrders.map(limitOrder => {
+      limitOrder.order.startTime = limitOrder.order.startTime.toString();
+      limitOrder.order.endTime = limitOrder.order.endTime.toString();
+      return limitOrder;
+    });
+
+    return this.filterLimitOrdersByPrice(mappedOrders, tokenInPrice);
   }
 
-  public async getAllLimitOrders(): Promise<ILimitOrder[]> {
-    return this.LimitOrderModel.find({});
+  public filterLimitOrdersByPrice(orders: ILimitOrder[], tokenInPrice: BigNumber) {
+    return orders.filter(order => tokenInPrice.gt(order.price)); // e.g. tokenIn == eth; current ether price 2100, limit price 2000 -> profitable to execute!
   }
 
   public async invalidateLimitOrders(orders: ILimitOrder[]): Promise<{ n?: number }> {
