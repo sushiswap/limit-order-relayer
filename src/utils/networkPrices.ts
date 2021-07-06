@@ -2,6 +2,7 @@ import { ChainId } from "@sushiswap/sdk";
 import axios from "axios";
 import { BigNumber } from "ethers";
 import { PriceUpdate, PRICE_MULTIPLIER } from "../pairs/pairUpdates";
+import { getWeth } from "./misc";
 import { MyLogger } from "./myLogger";
 
 export class NetworkPrices {
@@ -28,9 +29,9 @@ export class NetworkPrices {
 
     let token0EthPrice, token1EthPrice;
 
-    if (priceUpdate.token0.address === process.env.WETH_ADDRESS) token0EthPrice = BigNumber.from("100000000");
+    if (priceUpdate.token0.address === getWeth(+process.env.CHAINID)) token0EthPrice = BigNumber.from("100000000");
 
-    if (priceUpdate.token1.address === process.env.WETH_ADDRESS) token1EthPrice = BigNumber.from("100000000");
+    if (priceUpdate.token1.address === getWeth(+process.env.CHAINID)) token1EthPrice = BigNumber.from("100000000");
 
     if (!token0EthPrice && !token1EthPrice) { // fetch one of the prices from coingecko
 
@@ -139,7 +140,7 @@ export class NetworkPrices {
 
     } catch (e) {
 
-      return MyLogger.log(`Couldn't fetch eth price of token: ${tokenAddress} ${e.toString().substring(0, 150)} ...`);
+      return MyLogger.log(`Couldn't fetch eth price of token: ${tokenAddress} ${e.toString().substring(0, 400)} ...`);
 
     }
 

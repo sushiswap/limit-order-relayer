@@ -69,7 +69,7 @@ export class Database {
       if (err.code === 11000) {
         MyLogger.log('Ignored saving an existing order');
       } else {
-        MyLogger.log(`...${err.toString().substring(0, 100)}`);
+        MyLogger.log(`${err.toString().substring(0, 400)} ...`);
       }
 
     });

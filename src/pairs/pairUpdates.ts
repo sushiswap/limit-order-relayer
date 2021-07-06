@@ -65,7 +65,7 @@ export function watchSushiwapPairs(watchPairs: IWatchPair[]): Observable<PriceUp
 
   setInterval(async () => {
 
-    updatePrices().then().catch(e => MyLogger.log(`Failed to fetch pool price ${e.toString().substring(0, 100)} ...`));
+    updatePrices().then().catch(e => MyLogger.log(`Failed to fetch pool price ${e.toString().substring(0, 400)} ...`));
 
   }, +process.env.INTERVAL_MINUTES * 60 * 1000); // then every x min
 

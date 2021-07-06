@@ -3,7 +3,12 @@ import { providers, Wallet } from "ethers";
 
 export class MyProvider {
 
+  // helpers for load balancing
+  private toggle = false;
+  private lastToggle = new Date();
+
   private _provider: providers.JsonRpcProvider;
+  private _secondaryProvider: providers.JsonRpcProvider;
   private _socketProvider: providers.WebSocketProvider;
   private _signer: NonceManager;
 
@@ -22,7 +27,9 @@ export class MyProvider {
 
     this._provider = new providers.JsonRpcProvider(process.env.HTTP_JSON_RPC);
 
-    this._signer = new NonceManager(new Wallet(process.env.PRIVATE_KEY, this._provider)); // TODO we sould reset setTransactionCount every so often 
+    this._secondaryProvider = new providers.JsonRpcProvider(process.env.SECONDARY_HTTP_JSON_RPC);
+
+    this._signer = new NonceManager(new Wallet(process.env.PRIVATE_KEY, this._provider));
 
     if (process.env.WEBSOCKET_JSON_RPC) {
 
@@ -35,7 +42,14 @@ export class MyProvider {
   };
 
   public get provider() {
-    return this._provider;
+
+    if (this.lastToggle.getTime() < (new Date()).getTime() - 1000 * 60) {
+      this.lastToggle = new Date();
+      this.toggle = !this.toggle;
+    }
+
+    return this.toggle ? this._provider : this._secondaryProvider;
+
   }
 
   public get usingSocket() {

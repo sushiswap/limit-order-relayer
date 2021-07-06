@@ -45,9 +45,8 @@ export class LimitOrderRelayer {
     if (dbError) return MyLogger.log(`Failed to connect to db: ${dbError}`);
 
 
-    // which pairs we execute limit orders for
-    // const [watchPairs,] = await safeAwait(this.database.setWatchPairs());
     const [watchPairs, err] = await safeAwait(getLimitOrderPairs());
+
 
     if (!watchPairs || watchPairs.length == 0 || !!err) return MyLogger.log(`No pairs to watch, err: ${err}`);
 
