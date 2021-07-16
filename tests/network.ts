@@ -31,6 +31,6 @@ describe('Token prices', () => {
 
     expect(await prices).to.not.throw;
 
-  }).timeout(20000);
+  }).timeout(30000);
 
 });

@@ -3,6 +3,7 @@ import axios from "axios";
 import { BigNumber } from "ethers";
 import { PriceUpdate, PRICE_MULTIPLIER } from "../pairs/pairUpdates";
 import { getWeth } from "./misc";
+import { safeAwait } from "./myAwait";
 import { MyLogger } from "./myLogger";
 
 export class NetworkPrices {
@@ -35,18 +36,20 @@ export class NetworkPrices {
 
     if (!token0EthPrice && !token1EthPrice) { // fetch one of the prices from coingecko
 
-      token0EthPrice = await this.getTokenEthPrice(chainId, priceUpdate.token0.address, priceUpdate.token0.addressMainnet, priceUpdate.pair.token0.symbol);
+      let err1, err2;
+
+      [token0EthPrice, err1] = await safeAwait(this.getTokenEthPrice(chainId, priceUpdate.token0.address, priceUpdate.token0.addressMainnet, priceUpdate.pair.token0.symbol))
 
       if (!token0EthPrice) {
 
-        token1EthPrice = await this.getTokenEthPrice(chainId, priceUpdate.token1.address, priceUpdate.token1.addressMainnet, priceUpdate.pair.token1.symbol);
-
+        [token1EthPrice, err2] = await safeAwait(this.getTokenEthPrice(chainId, priceUpdate.token1.address, priceUpdate.token1.addressMainnet, priceUpdate.pair.token1.symbol));
       }
+
+      if (err1 && err2) console.log(err1, err2);
 
     }
 
     // if we have one token price we can caluculate the other from the pool's price
-
     if (token0EthPrice && !token1EthPrice) token1EthPrice = token0EthPrice.mul(priceUpdate.token1.price).div(PRICE_MULTIPLIER);
 
     if (token1EthPrice && !token0EthPrice) token0EthPrice = token1EthPrice.mul(priceUpdate.token0.price).div(PRICE_MULTIPLIER);
@@ -96,6 +99,7 @@ export class NetworkPrices {
   /**
    * @returns price of token in terms of "WETH" or whichever coin the network fees are paid in
    * @note eth prices are multiplied by 1e8
+   * use safe await when calling
    */
   public getTokenEthPrice = async function (chainId: number, tokenAddress: string, tokenMainnetAddress?: string, tokenSymbol?: string): Promise<BigNumber | undefined> {
 
@@ -140,13 +144,13 @@ export class NetworkPrices {
 
     } catch (e) {
 
-      return MyLogger.log(`Couldn't fetch eth price of token: ${tokenAddress} ${e.toString().substring(0, 400)} ...`);
+      throw new Error(`Couldn't fetch eth price of token: ${tokenAddress} ${e.toString().substring(0, 400)} ...`);
 
     }
 
     if (!tokenPrice) {
 
-      return MyLogger.log(`Couldn't fetch eth price of token: ${tokenAddress}`);
+      throw new Error(`Couldn't fetch eth price of token: ${tokenAddress}`);
 
     }
 
@@ -158,4 +162,21 @@ export class NetworkPrices {
     return this.cache[tokenAddress].value;
 
   }
+}
+
+// todo - set a manual rate limit for coingecko requests
+class CoingeckoRequests {
+
+  private static _instance: CoingeckoRequests;
+
+  public static get Instance() {
+    return this._instance || (this._instance = new this());
+  }
+
+  history = [];
+  index;
+
+  protected constructor() { }
+
+
 }

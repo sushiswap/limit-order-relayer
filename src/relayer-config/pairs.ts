@@ -25,28 +25,45 @@ export const fetchLimitOrderPairs = async function (chainId: ChainId): Promise<s
 }
 
 export const _limitOrderPairs: string[][] = [
-  ["USDC", "IRON"],
-  ["WMATIC", "TITAN"],
-  ["WETH", "USDC"],
-  ["WBTC", "WETH"],
-  ["WMATIC", "WETH"],
   // ["TITAN", "IRON"], edgecase can't fetch prices of these tokens directly - see how prices are fetched in utils/networkPrices.ts
-  ["WETH", "USDT"],
+  ["WBTC", "WETH"],
   ["USDC", "USDT"],
+  ["USDC", "IRON"],
+  ["WETH", "USDC"],
+  ["WETH", "USDT"],
+  ["WMATIC", "WETH"],
   ["WETH", "DAI"],
-  ["LINK", "WETH"],
-  ["WETH", "AAVE"],
   ["USDC", "DAI"],
-  ["WMATIC", "USDC"],
+  ["WETH", "AAVE"],
+  ["LINK", "WETH"],
   ["FRAX", "USDC"],
+  ["WMATIC", "USDC"],
   ["WMATIC", "FISH"],
+  ["WMATIC", "TITAN"],
   ["CRV", "WETH"],
   ["SNX", "USDC"],
   ["FRAX", "FXS"],
-  ["WETH", "DHT"],
   ["SUSHI", "WETH"],
-  ["GRT", "WETH"]
-]
+  ["GRT", "WETH"], // v1.0
+  ["WBTC", "ibBTC"],
+  ["USDC", "PUSD"],
+  ["dTOP", "WETH"],
+  ["SNX", "WETH"],
+  ["DHT", "WETH"],
+  ["USDC", "PYQ"],
+  ["WETH", "SX"],
+  ["OMEN", "WETH"],
+  ["OMEN", "WMATIC"],
+  ["WETH", "wFIL"],
+  ["USDC", "BIFI"],
+  ["WMATIC", "WOOFY"],
+  ["SUSHI", "WMATIC"],
+  ["WMATIC", "PGOV"],
+  ["renDOGE", "WETH"],
+  ["WMATIC", "BONE"],
+  ["USDC", "BONE"],
+  ["USDC", "SUSHI"], // v1.1
+];
 
 export const getDesiredProfitToken = function (chainId: ChainId): string[] {
 
