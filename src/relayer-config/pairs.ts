@@ -26,13 +26,15 @@ export const fetchLimitOrderPairs = async function (chainId: ChainId): Promise<s
 
 export const _limitOrderPairs: string[][] = [
   // ["TITAN", "IRON"], edgecase can't fetch prices of these tokens directly - see how prices are fetched in utils/networkPrices.ts
+  ["WETH", "WMATIC"],
+  ["WETH", "USDC"],
+  ["WMATIC", "USDC"],
+  ["WETH", "DAI"],
   ["WBTC", "WETH"],
   ["USDC", "USDT"],
   ["USDC", "IRON"],
-  ["WETH", "USDC"],
   ["WETH", "USDT"],
   ["WMATIC", "WETH"],
-  ["WETH", "DAI"],
   ["USDC", "DAI"],
   ["WETH", "AAVE"],
   ["LINK", "WETH"],
@@ -70,25 +72,5 @@ export const getDesiredProfitToken = function (chainId: ChainId): string[] {
   if (chainId === ChainId.MATIC) {
     return ["WMATIC", "WETH", "SUSHI", "WBTC", "USDC", "DAI", "USDT"];
   }
-
-}
-
-function getPairCombinations() {
-
-  const tokens = process.env.TOKENS.split(",");
-
-  const combos = [];
-
-  tokens.forEach((token, i) => {
-
-    for (let j = i + 1; j < tokens.length; j++) {
-
-      combos.push([token, tokens[j]]);
-
-    }
-
-  });
-
-  return combos;
 
 }

@@ -4,7 +4,6 @@ import { BigNumber } from "ethers";
 import { PriceUpdate, PRICE_MULTIPLIER } from "../pairs/pairUpdates";
 import { getWeth } from "./misc";
 import { safeAwait } from "./myAwait";
-import { MyLogger } from "./myLogger";
 
 export class NetworkPrices {
 
@@ -30,19 +29,19 @@ export class NetworkPrices {
 
     let token0EthPrice, token1EthPrice;
 
-    if (priceUpdate.token0.address === getWeth(+process.env.CHAINID)) token0EthPrice = BigNumber.from("100000000");
+    if (priceUpdate.token0.address === getWeth(+process.env.CHAINID)) token0EthPrice = BigNumber.from("1000000000000000000");
 
-    if (priceUpdate.token1.address === getWeth(+process.env.CHAINID)) token1EthPrice = BigNumber.from("100000000");
+    if (priceUpdate.token1.address === getWeth(+process.env.CHAINID)) token1EthPrice = BigNumber.from("1000000000000000000");
 
     if (!token0EthPrice && !token1EthPrice) { // fetch one of the prices from coingecko
 
       let err1, err2;
 
-      [token0EthPrice, err1] = await safeAwait(this.getTokenEthPrice(chainId, priceUpdate.token0.address, priceUpdate.token0.addressMainnet, priceUpdate.pair.token0.symbol))
+      [token0EthPrice, err1] = await safeAwait(this.getTokenEthPrice(chainId, priceUpdate.token0.address, priceUpdate.token0.decimals, priceUpdate.token0.addressMainnet, priceUpdate.pair.token0.symbol));
 
       if (!token0EthPrice) {
 
-        [token1EthPrice, err2] = await safeAwait(this.getTokenEthPrice(chainId, priceUpdate.token1.address, priceUpdate.token1.addressMainnet, priceUpdate.pair.token1.symbol));
+        [token1EthPrice, err2] = await safeAwait(this.getTokenEthPrice(chainId, priceUpdate.token1.address, priceUpdate.token1.decimals, priceUpdate.token1.addressMainnet, priceUpdate.pair.token1.symbol));
       }
 
       if (err1 && err2) console.log(err1, err2);
@@ -101,7 +100,7 @@ export class NetworkPrices {
    * @note eth prices are multiplied by 1e8
    * use safe await when calling
    */
-  public getTokenEthPrice = async function (chainId: number, tokenAddress: string, tokenMainnetAddress?: string, tokenSymbol?: string): Promise<BigNumber | undefined> {
+  public getTokenEthPrice = async function (chainId: number, tokenAddress: string, tokenDecimals: number, tokenMainnetAddress?: string, tokenSymbol?: string): Promise<BigNumber | undefined> {
 
     if (this.cache[tokenAddress]?.timestamp > (new Date().getTime() - 60000)) return this.cache[tokenAddress]?.value;
 
@@ -154,9 +153,16 @@ export class NetworkPrices {
 
     }
 
+    // we want the price to be padded by 18 decimals - more if the token has less than 18 decimals
+    const e8value = BigNumber.from(Math.floor(tokenPrice * 1e9));
+
+    const diff = BigNumber.from("10").pow(9 + (18 - tokenDecimals));
+
+    const e18value = e8value.mul(diff);
+
     this.cache[tokenAddress] = {
       timestamp: (new Date()).getTime(),
-      value: BigNumber.from(Math.floor(tokenPrice * 1e8))
+      value: e18value
     };
 
     return this.cache[tokenAddress].value;

@@ -19,8 +19,8 @@ const watchPair = {
 
 const priceUpdate: PriceUpdate = {
   pair: watchPair,
-  token0: { poolBalance: daiBalance, price: wethBalance.mul(PRICE_MULTIPLIER).div(daiBalance), address: "0x6B175474E89094C44Da98b954EedeAC495271d0F" },
-  token1: { poolBalance: wethBalance, price: daiBalance.mul(PRICE_MULTIPLIER).div(wethBalance), address: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2" }
+  token0: { poolBalance: daiBalance, decimals: 18, price: wethBalance.mul(PRICE_MULTIPLIER).div(daiBalance), address: "0x6B175474E89094C44Da98b954EedeAC495271d0F" },
+  token1: { poolBalance: wethBalance, decimals: 18, price: daiBalance.mul(PRICE_MULTIPLIER).div(wethBalance), address: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2" }
 }
 
 const profitableSellOrder: ILimitOrder = {
@@ -143,8 +143,8 @@ describe('Profitability', () => {
   });
 
   it('Should caclulate the state after limit order execution [0]', () => {
-    const token1EthPrice = BigNumber.from("100000000"); // 1
-    const token0EthPrice = BigNumber.from("49954"); // 0.00049954
+    const token1EthPrice = BigNumber.from("1000000000000000000"); // 1
+    const token0EthPrice = BigNumber.from("499540000000000"); // 0.00049954
 
     const effects = getOrderEffects(profitableSellOrder, true, priceUpdate, token0EthPrice, token1EthPrice);
 
@@ -167,8 +167,8 @@ describe('Profitability', () => {
   });
 
   it('Should caclulate the state after limit order execution [1]', () => {
-    const token1EthPrice = BigNumber.from("100000000"); // 1
-    const token0EthPrice = BigNumber.from("49954"); // 0.00049954
+    const token1EthPrice = BigNumber.from("1000000000000000000"); // 1
+    const token0EthPrice = BigNumber.from("499540000000000"); // 0.00049954
 
     const _unprofitableOrder = JSON.parse(JSON.stringify(profitableSellOrder));
     _unprofitableOrder.order.amountOut = "2500000000000000000";
@@ -180,8 +180,8 @@ describe('Profitability', () => {
   });
 
   it('Should caclulate the state after limit order execution [2]', () => {
-    const token1EthPrice = BigNumber.from("100000000");
-    const token0EthPrice = BigNumber.from("49954");
+    const token1EthPrice = BigNumber.from("1000000000000000000"); // 1
+    const token0EthPrice = BigNumber.from("499540000000000"); // 0.00049954
     const _profitableSellOrder = JSON.parse(JSON.stringify(profitableSellOrder));
 
     _profitableSellOrder.order.amountIn = "2100000000000000000000000"; // 2.1m dai
@@ -209,8 +209,8 @@ describe('Profitability', () => {
   });
 
   it('Should caclulate the state after limit order execution [3]', () => {
-    const token1EthPrice = BigNumber.from("100000000");
-    const token0EthPrice = BigNumber.from("49954");
+    const token1EthPrice = BigNumber.from("1000000000000000000"); // 1
+    const token0EthPrice = BigNumber.from("499540000000000"); // 0.00049954
 
     const _profitableSellOrder = JSON.parse(JSON.stringify(profitableSellOrder));
     _profitableSellOrder.order.amountIn = "100000000000000000000"; // selling 100 weth @ 2040; current price is 2047 DAI
@@ -244,8 +244,8 @@ describe('Profitability', () => {
 
     const profitable = await profitableOrders(_priceUpdate, [profitableSellOrder], {
       gasPrice: BigNumber.from("40"),
-      token0EthPrice: BigNumber.from("49954"),
-      token1EthPrice: BigNumber.from("100000000")
+      token0EthPrice: BigNumber.from("499540000000000"),
+      token1EthPrice: BigNumber.from("1000000000000000000")
     });
 
     expect(profitable.length).to.be.eq(1, "Profitable oroder was filtered out by mistake");
@@ -268,6 +268,66 @@ describe('Profitability', () => {
     expect(MockDatabase.Instance.filterLimitOrdersByPrice([...twoProfitableOrders, unprofitableOrder], mockPriceUpdate.token1.price).length).to.be.eq(2, "did not filter out unprofitable orders correctly");
 
   });
+
+  /* it.('Should calcualte profitability', async () => {
+    const validOrder = {
+      order: {
+        maker: "0x8f99B0b48b23908Da9f727B5083052d5099e6aea",
+        tokenIn: "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174",
+        tokenOut: "0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063",
+        tokenInDecimals: 6,
+        tokenOutDecimals: 18,
+        amountIn: 8455724,
+        amountOut: 5919006800000000000,
+        recipient: "0x8f99B0b48b23908Da9f727B5083052d5099e6aea",
+        startTime: "0",
+        endTime: "9007199254740991",
+        stopPrice: "0",
+        oracleAddress: "0x0000000000000000000000000000000000000000",
+        oracleData: "0x00000000000000000000000000000000000000000000000000000000000000",
+        v: 27,
+        r: "0x62ad8d9e63ad4ba612c95d25c24b4e9f9c676222022912153f9e45e1cf933ae2",
+        s: "0x4b50c1d01295d2057714cb1a890ac794a377e9a82ad73533c70bc010f23a99a0",
+        chainId: 137
+      },
+      price: "702106318956870611835506519558",
+      digest: "0x7199c3bc3f97f73f82ba3ac9ebb788dc2f4d76602e3c8676ead56c59bc61b4e5",
+      valid: true,
+      pairAddress: "0xCD578F016888B57F1b1e3f887f392F0159E26747",
+      filledAmount: "0",
+      userBalance: "10220158"
+    }
+    const priceUpdate = {
+      token0: {
+        price: BigNumber.from("999181521688920758768061723009"),
+        poolBalance: BigNumber.from("14915914799339"),
+        address: '0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174',
+        addressMainnet: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'
+      },
+      token1: {
+        price: BigNumber.from("1000819"),
+        poolBalance: BigNumber.from('14903706446585835155899385'),
+        address: '0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063',
+        addressMainnet: '0x6B175474E89094C44Da98b954EedeAC495271d0F'
+      },
+      pair: {
+        token0: {
+          address: '0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174',
+          addressMainnet: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+          symbol: 'USDC',
+          decimals: 6
+        },
+        token1: {
+          address: '0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063',
+          addressMainnet: '0x6B175474E89094C44Da98b954EedeAC495271d0F',
+          symbol: 'DAI',
+          decimals: 18
+        },
+        pairAddress: '0xCD578F016888B57F1b1e3f887f392F0159E26747'
+      }
+    }
+    // console.log(await profitableOrders(priceUpdate, [validOrder]));
+  }); */
 });
 
 function deepCopyPriceUpdate(priceUpdate: PriceUpdate) {
@@ -285,8 +345,8 @@ export class MockNetworkPrices extends NetworkPrices {
     Promise<{ gasPrice: BigNumber, token0EthPrice: BigNumber, token1EthPrice: BigNumber }> {
     return {
       gasPrice: BigNumber.from("4"),
-      token0EthPrice: BigNumber.from("49954"),
-      token1EthPrice: BigNumber.from("100000000")
+      token0EthPrice: BigNumber.from("499540000000000"), // 0.00049954
+      token1EthPrice: BigNumber.from("1000000000000000000") // 1
     }
   }
 }

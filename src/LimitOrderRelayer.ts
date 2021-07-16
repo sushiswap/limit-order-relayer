@@ -86,7 +86,7 @@ export class LimitOrderRelayer {
       // filter out expired / already filled orders (they are grouped together so this can be only 1 onchain call) // could this be a problem if there is too many orders ? 
       const [validOrders, err] = await safeAwait(this.refreshGroupOrderStatus(groupedOrders));
 
-      if (err) return MyLogger.log(`FAILED TO REFRESH GROUP ORDER STATUS ${err.toString().substr(0, 400)}`);
+      if (err) return MyLogger.log(`Failed to refresh group order status: ${err.toString().substr(0, 400)}`);
 
       validOrders.forEach(async ([_token0Orders, _token1Orders], i) => {
 

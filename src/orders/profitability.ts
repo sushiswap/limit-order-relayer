@@ -126,11 +126,9 @@ export function getOrderEffects(orderData: ILimitOrder, sellingToken0: boolean, 
     profitGwei = BigNumber.from("0");
   } else {
 
-    // eth price is already 1e8 padded
-    // mul by 10^10 to get price in terms of gewi units
-    const price = BigNumber.from(10).mul(sellingToken0 ? token1EthPrice : token0EthPrice);
-    const tokenDecimalPadding = BigNumber.from("10").pow(orderData.order.tokenOutDecimals);
-    profitGwei = outDiff.mul(price).div(tokenDecimalPadding);
+    const price = sellingToken0 ? token1EthPrice : token0EthPrice;
+
+    profitGwei = outDiff.mul(price).div(BigNumber.from("10").pow(18 + 9));
 
   }
 

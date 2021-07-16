@@ -87,7 +87,7 @@ export class ExecuteHelper {
 
   private executedOrders: Array<{ timestamp: number, digest: string }> = [];
 
-  private timeBuffer = 1000 * 180; // 5 min
+  private timeBuffer = 1000 * 180; // 3 min
 
   public readonly profitTokens: string[];
 

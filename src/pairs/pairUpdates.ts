@@ -13,12 +13,14 @@ export interface PriceUpdate {
     poolBalance: BigNumber,
     price: BigNumber, // price is calculated as (token1Balance * {PRICE_MULTIPLIER}) / token0Balance
     address: string,
+    decimals: number,
     addressMainnet?: string
   },
   token1: {
     poolBalance: BigNumber,
     price: BigNumber, // price is calculated as (token0Balance * {PRICE_MULTIPLIER}) / token1Balance
     address: string,
+    decimals: number,
     addressMainnet?: string
   }
 }
@@ -43,6 +45,7 @@ export function watchSushiwapPairs(watchPairs: IWatchPair[]): Observable<PriceUp
         price: (poolInfo.token1.mul(PRICE_MULTIPLIER)).div(poolInfo.token0),
         poolBalance: poolInfo.token0,
         address: pair.token0.address,
+        decimals: pair.token0.decimals,
         addressMainnet: pair.token0.addressMainnet
       };
 
@@ -50,6 +53,7 @@ export function watchSushiwapPairs(watchPairs: IWatchPair[]): Observable<PriceUp
         price: (poolInfo.token0.mul(PRICE_MULTIPLIER)).div(poolInfo.token1),
         poolBalance: poolInfo.token1,
         address: pair.token1.address,
+        decimals: pair.token1.decimals,
         addressMainnet: pair.token1.addressMainnet
       };
 
