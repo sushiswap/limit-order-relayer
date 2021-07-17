@@ -61,7 +61,7 @@ export class Database {
 
       const current = new Date();
       const today = (new Date(current.getFullYear(), current.getMonth(), current.getDate())).getTime();
-      console.log(today);
+
       this.OrderCounterModel.updateOne({ timestamp: today }, { $inc: { counter: 1 } }, { upsert: true }).exec().then();
 
     }).catch(err => {
