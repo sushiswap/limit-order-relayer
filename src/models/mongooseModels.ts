@@ -75,7 +75,7 @@ export const executedOrderModel = new Schema({
     chainId: Number
   },
   fillAmount: String,
-  txHash: String,
+  txHash: { type: String, unique: true },
   status: Number, // -1 unknown, 0 failed, 1 passed
 }, { timestamps: true });
 

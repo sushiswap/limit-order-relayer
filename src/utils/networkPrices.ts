@@ -170,7 +170,7 @@ export class NetworkPrices {
   }
 }
 
-// todo - set a manual rate limit for coingecko requests
+// todo / wip - set a manual rate limit for coingecko requests
 class CoingeckoRequests {
 
   private static _instance: CoingeckoRequests;

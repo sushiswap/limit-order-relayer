@@ -120,7 +120,7 @@ export class LimitOrderRelayer {
 
       const [, error] = await safeAwait(this.database.saveExecutedOrder(executed));
 
-      if (error) MyLogger.log(`Couldn't save executed order ${error}`)
+      if (error) MyLogger.log(`Couldn't save executed order ${error.toString().substr(0, 300)}`)
 
       this._executedOrders.next(executed);
 
