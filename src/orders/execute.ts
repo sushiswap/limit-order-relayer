@@ -11,7 +11,7 @@ import { ChainId } from "@sushiswap/sdk";
 
 export async function executeOrders(ordersData: ExecutableOrder[], gasPrice: BigNumber): Promise<IExecutedOrder[]> {
 
-  const forceExecution = true;
+  const forceExecution = false;
 
   const executedOrders: IExecutedOrder[] = [];
 
@@ -46,7 +46,7 @@ export async function executeOrders(ordersData: ExecutableOrder[], gasPrice: Big
 
     if (!alreadyExecuted) {
 
-      const [data, error] = await safeAwait(fillOrder.fillOrder(signer, { debug: true, forceExecution, gasPrice: gasPrice, open: false }));
+      const [data, error] = await safeAwait(fillOrder.fillOrder(signer, { debug: false, forceExecution, gasPrice: gasPrice, open: false }));
 
       if (error) {
 
