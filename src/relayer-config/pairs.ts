@@ -52,7 +52,7 @@ export const _limitOrderPairs: string[][] = [
   ["dTOP", "WETH"],
   ["SNX", "WETH"],
   ["DHT", "WETH"],
-  ["USDC", "PYQ"],
+  // ["USDC", "PYQ"],
   ["WETH", "SX"],
   ["OMEN", "WETH"],
   ["OMEN", "WMATIC"],
