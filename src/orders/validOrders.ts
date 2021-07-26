@@ -64,11 +64,11 @@ export async function getOrderStatus(limitOrders: ILimitOrder[], fetchUserBalanc
 
   const helper = new Contract(process.env.HELPER, HELPER, provider);
 
-  let info: { filledAmount: BigNumber, cancelled: boolean, makersBentoBalance?: BigNumber }[];
+  let info: { filledAmount: BigNumber, cancelled: boolean, makersBentoBalance?: BigNumber, approvedMasterContract?: boolean }[];
 
   if (fetchUserBalance) {
 
-    info = await helper.getOrderInfoWithBalance(
+    info = await helper.getOrderUserInfo(
       limitOrders.map(limitOrder => limitOrder.order.maker),
       limitOrders.map(limitOrder => limitOrder.order.tokenIn),
       limitOrders.map(limitOrder => limitOrder.digest)
@@ -85,23 +85,27 @@ export async function getOrderStatus(limitOrders: ILimitOrder[], fetchUserBalanc
 
   limitOrders.forEach((_limitOrder, i) => {
 
-    const limitOrder = LimitOrder.getLimitOrder(_limitOrder.order);
-
-    const expired = isExpired(limitOrder);
-    const live = isLive(limitOrder);
-    const canceled = info[i].cancelled;
     const filledAmount = info[i].filledAmount;
-    const filled = filledAmount.eq(limitOrder.amountInRaw);
 
     _limitOrder.filledAmount = filledAmount.toString();
 
     if (fetchUserBalance) _limitOrder.userBalance = info[i].makersBentoBalance.toString();
 
-    if (!filled && !canceled && !expired && live) {
+    const limitOrder = LimitOrder.getLimitOrder(_limitOrder.order);
+
+    const expired = isExpired(limitOrder);
+    const live = isLive(limitOrder);
+    const canceled = info[i].cancelled;
+    const approvedMasterContract = info[i].approvedMasterContract;
+    const filled = filledAmount.eq(limitOrder.amountInRaw);
+
+
+
+    if (!filled && !canceled && !expired && live && approvedMasterContract) {
       status.push(OrderStatus.VALID);
     } else if (filled || canceled || expired) {
       status.push(OrderStatus.INVALID);
-    } else if (!live) {
+    } else {
       status.push(OrderStatus.PENDING);
     }
 

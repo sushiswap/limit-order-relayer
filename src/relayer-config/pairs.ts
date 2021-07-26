@@ -6,22 +6,8 @@ dotenv.config();
 
 export const fetchLimitOrderPairs = async function (chainId: ChainId): Promise<string[][]> {
 
-  const fetchFromApi = false;
+  return _limitOrderPairs;
 
-  if (!fetchFromApi) {
-
-    return _limitOrderPairs;
-
-  } else {
-
-    return (await axios(`${LAMBDA_URL}/orders/pairs`, {
-      method: 'POST',
-      data: {
-        chainId: chainId
-      }
-    })).data.data.pairs.map(pair => [pair.token0.symbol, pair.token1.symbol]);
-
-  }
 }
 
 export const _limitOrderPairs: string[][] = [
