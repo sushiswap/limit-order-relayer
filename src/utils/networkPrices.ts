@@ -1,5 +1,5 @@
 import { ChainId } from "@sushiswap/sdk";
-import axios from "axios";
+import axios, { AxiosResponse } from "axios";
 import { BigNumber } from "ethers";
 import { PriceUpdate, PRICE_MULTIPLIER } from "../pairs/pairUpdates";
 import { getWeth } from "./misc";
@@ -79,7 +79,7 @@ export class NetworkPrices {
 
       const gasPrice = await axios('https://gasstation-mainnet.matic.network');
 
-      proposeGasPrice = Math.min((Number(gasPrice?.data.standard ?? 0)) / 2, 10);
+      proposeGasPrice = Math.max(1.2, Math.min((Number(gasPrice?.data.standard ?? 0)) / 1.5, 15));
 
     }
 
@@ -113,13 +113,27 @@ export class NetworkPrices {
 
       if (chainId == ChainId.MAINNET) {
 
-        const token0EthPrice = await axios(`https://api.coingecko.com/api/v3/coins/ethereum/contract/${tokenAddress}`);
+        const token0EthPrice = await CoingeckoRequests.Instance.makeRequest(`https://api.coingecko.com/api/v3/coins/ethereum/contract/${tokenAddress}`);
 
         tokenPrice = token0EthPrice?.data?.market_data?.current_price?.eth
 
+
       } else if (chainId === ChainId.MATIC) {
 
-        const maticUsd = (await axios(`https://api.coingecko.com/api/v3/coins/matic-network?localization=false&tickers=false&market_data=true&community_data=false&developer_data=false&sparkline=false`))?.data?.market_data?.current_price.usd;
+        let maticUsd;
+
+        if (this.cache['wmatic']?.timestamp > (new Date().getTime() - 60000)) {
+          maticUsd = this.cache['wmatic']?.value;
+        } else {
+
+          maticUsd = (await CoingeckoRequests.Instance.makeRequest(`https://api.coingecko.com/api/v3/coins/matic-network?localization=false&tickers=false&market_data=true&community_data=false&developer_data=false&sparkline=false`))?.data?.market_data?.current_price.usd;
+
+          this.cache['wmatic'] = {
+            timestamp: (new Date()).getTime(),
+            value: maticUsd
+          };
+
+        }
 
         let tokenUsd;
 
@@ -130,8 +144,8 @@ export class NetworkPrices {
         } else {
 
           tokenUsd = (await (tokenMainnetAddress ?
-            axios(`https://api.coingecko.com/api/v3/coins/ethereum/contract/${tokenMainnetAddress}`) :
-            axios(`https://api.coingecko.com/api/v3/coins/polygon-pos/contract/${tokenAddress}`)))?.data?.market_data?.current_price.usd;
+            CoingeckoRequests.Instance.makeRequest(`https://api.coingecko.com/api/v3/coins/ethereum/contract/${tokenMainnetAddress}`) :
+            CoingeckoRequests.Instance.makeRequest(`https://api.coingecko.com/api/v3/coins/polygon-pos/contract/${tokenAddress}`)))?.data?.market_data?.current_price.usd;
 
         }
 
@@ -170,7 +184,8 @@ export class NetworkPrices {
   }
 }
 
-// todo / wip - set a manual rate limit for coingecko requests
+// set a manual rate limit for coingecko requests (50 req / min)
+// also with own internal cache
 class CoingeckoRequests {
 
   private static _instance: CoingeckoRequests;
@@ -179,10 +194,46 @@ class CoingeckoRequests {
     return this._instance || (this._instance = new this());
   }
 
-  history = [];
-  index;
+  nextRequestAvalable = 0;
+  internalCache: {
+    [key: string]: {
+      timestamp: number,
+      value: AxiosResponse
+    }
+  } = {};
 
   protected constructor() { }
 
+  makeRequest(url): Promise<AxiosResponse> {
+
+    return new Promise(async (resolve, reject) => {
+
+      let currentTime = new Date().getTime();
+
+      if (this.internalCache[url]?.timestamp + 60000 > currentTime) {
+        return resolve(this.internalCache[url].value);
+      } else {
+
+        await new Promise(r => setTimeout(() => r(undefined), currentTime < this.nextRequestAvalable ? this.nextRequestAvalable - currentTime : 0));
+        this.nextRequestAvalable = Math.max(this.nextRequestAvalable, currentTime) + 1000;
+
+        if (this.internalCache[url]?.timestamp + 60000 > new Date().getTime()) {
+          this.nextRequestAvalable -= 1000;
+          return resolve(this.internalCache[url].value);
+        }
+
+        const [response, err] = await safeAwait(axios(url));
+        if (err) reject(err);
+
+        this.internalCache[url] = {
+          timestamp: new Date().getTime(),
+          value: response
+        };
+        resolve(response);
+
+      }
+
+    })
+  }
 
 }
