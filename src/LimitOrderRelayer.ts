@@ -98,14 +98,12 @@ export class LimitOrderRelayer {
 
       });
 
-
-
     });
 
   }
 
 
-  // also for testing purposes
+  // testing purposes
   private _executedOrders = new Subject<IExecutedOrder[]>();
   public get submittedOrders(): Observable<IExecutedOrder[]> {
     return this._executedOrders.asObservable();

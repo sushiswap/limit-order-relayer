@@ -79,7 +79,7 @@ export class NetworkPrices {
 
       const gasPrice = await axios('https://gasstation-mainnet.matic.network');
 
-      proposeGasPrice = Math.max(1.2, Math.min((Number(gasPrice?.data.standard ?? 0)) / 1.5, 15));
+      proposeGasPrice = gasPrice?.data.standard ?? 30;
 
     }
 
