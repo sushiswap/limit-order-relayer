@@ -83,7 +83,6 @@ export const _limitOrderPairs = {
   [ChainId.AVALANCHE]: [
     ["wMEMO", "MIM"],
     ["MIM", "WAVAX"],
-    // ["MIM", "TIME"],
     ["MIM", "BSGG"],
     ["USDC", "WAVAX"],
     ["SPELL", "WAVAX"],
