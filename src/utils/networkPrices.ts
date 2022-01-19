@@ -1,8 +1,7 @@
-import { ChainId } from '@sushiswap/core-sdk'
+import { ChainId, WNATIVE_ADDRESS } from '@sushiswap/core-sdk'
 import axios, { AxiosResponse } from 'axios'
 import { BigNumber } from 'ethers'
 import { PriceUpdate, PRICE_MULTIPLIER } from '../pairs/pairUpdates'
-import { getWeth } from './misc'
 import { safeAwait } from './myAwait'
 import { MyProvider } from './myProvider'
 
@@ -30,21 +29,22 @@ export class NetworkPrices {
     token0EthPrice: BigNumber
     token1EthPrice: BigNumber
   }> {
+    if (!(chainId in WNATIVE_ADDRESS)) {
+      throw Error(`No wrapped native address for ${chainId}`)
+    }
+
     const gasPrice = await this.getWeiGasPrice(chainId)
 
     let token0EthPrice, token1EthPrice
 
-    if (priceUpdate.token0.address === getWeth(+process.env.CHAINID))
-      token0EthPrice = BigNumber.from('1000000000000000000')
+    if (priceUpdate.token0.address === WNATIVE_ADDRESS[chainId]) token0EthPrice = BigNumber.from('1000000000000000000')
 
-    if (priceUpdate.token1.address === getWeth(+process.env.CHAINID))
-      token1EthPrice = BigNumber.from('1000000000000000000')
+    if (priceUpdate.token1.address === WNATIVE_ADDRESS[chainId]) token1EthPrice = BigNumber.from('1000000000000000000')
 
     if (!token0EthPrice && !token1EthPrice) {
       // fetch one of the prices from coingecko
 
       let err1, err2
-
       ;[token0EthPrice, err1] = await safeAwait(
         this.getTokenEthPrice(
           chainId,

@@ -81,6 +81,15 @@ export const _limitOrderPairs = {
   [ChainId.AVALANCHE]: [
     ['wMEMO', 'MIM'],
     ['MIM', 'WAVAX'],
+    ['MIM', 'BSGG'],
+    ['USDC', 'WAVAX'],
+    ['SPELL', 'WAVAX'],
+    ['sSPELL', 'SPELL'],
+    ['WETH', 'WAVAX'],
+    ['wMEMO', 'WAVAX'],
+    ['SUSHI', 'WAVAX'],
+    ['WBTC', 'WAVAX'],
+    ['USDT', 'WAVAX'],
   ],
 } as { [chainId in ChainId]: string[][] }
 
@@ -88,6 +97,6 @@ export const getDesiredProfitToken = function (chainId: ChainId): string[] {
   if (chainId === ChainId.MATIC) {
     return ['WMATIC', 'WETH', 'SUSHI', 'WBTC', 'USDC', 'DAI', 'USDT']
   } else if (chainId == ChainId.AVALANCHE) {
-    return ['WAVAX']
+    return ['WAVAX', 'TIME', 'MIM']
   }
 }
