@@ -8,7 +8,7 @@ import { safeAwait } from '../src/utils/myAwait';
 describe('Token prices', () => {
   it('Should get price of every token', async () => {
 
-    const pairs: IWatchPair[] = await getLimitOrderPairs();
+    const pairs: IWatchPair[] = await getLimitOrderPairs(1);
 
     const networkPrices = new NetworkPrices();
 

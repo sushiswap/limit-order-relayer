@@ -4,6 +4,7 @@ import { BigNumber } from "ethers";
 import { PriceUpdate, PRICE_MULTIPLIER } from "../pairs/pairUpdates";
 import { getWeth } from "./misc";
 import { safeAwait } from "./myAwait";
+import { MyProvider } from "./myProvider";
 
 export class NetworkPrices {
 
@@ -15,7 +16,7 @@ export class NetworkPrices {
     }
   } = {};
 
-  stablecoins = ["DAI", "USDC", "USDT"];
+  stablecoins = ["DAI", "USDC", "USDT", "MIM", "UST", "FRAX"];
 
   /**
   * @returns Gas price in wei units (e.g.) 9000000000 for gas price of '9', token0 and token1 prices in eth
@@ -65,32 +66,7 @@ export class NetworkPrices {
   */
   public getWeiGasPrice = async function (chainId: number): Promise<BigNumber> {
 
-    if (this.cache["gasprice"]?.timestamp > (new Date().getTime() - 60000)) return this.cache["gasprice"]?.value;
-
-    let proposeGasPrice;
-
-    if (chainId === ChainId.MAINNET) {
-
-      const gasPrice = await axios(`https://api.etherscan.io/api?module=gastracker&action=gasoracle&apikey=${process.env.ETHERSCAN_API_KEY}`);
-
-      proposeGasPrice = gasPrice?.data.result?.FastGasPrice;
-
-    } else if (chainId === ChainId.MATIC) {
-
-      const gasPrice = await axios('https://gasstation-mainnet.matic.network');
-
-      proposeGasPrice = gasPrice?.data.standard ?? 30;
-
-    }
-
-    if (!proposeGasPrice) throw new Error(`Failed to get gas price for ${chainId}`);
-
-    this.cache["gasprice"] = {
-      timestamp: (new Date()).getTime(),
-      value: BigNumber.from(Math.floor(+proposeGasPrice * 1e9))
-    };
-
-    return this.cache["gasprice"].value;
+    return MyProvider.Instance.provider.getGasPrice();
 
   }
 
@@ -151,6 +127,41 @@ export class NetworkPrices {
 
         if (tokenUsd && maticUsd) {
           tokenPrice = tokenUsd / maticUsd;
+        }
+
+      } else if (chainId === ChainId.AVALANCHE) {
+
+        let avaxUsd;
+
+        if (this.cache['wavax']?.timestamp > (new Date().getTime() - 60000)) {
+          avaxUsd = this.cache['wavax']?.value;
+        } else {
+
+          avaxUsd = (await CoingeckoRequests.Instance.makeRequest(`https://api.coingecko.com/api/v3/coins/avalanche-2?localization=false&tickers=false&market_data=true&community_data=false&developer_data=false&sparkline=false`))?.data?.market_data?.current_price.usd;
+
+          this.cache['wavax'] = {
+            timestamp: (new Date()).getTime(),
+            value: avaxUsd
+          };
+
+        }
+
+        let tokenUsd;
+
+        if (isUSD) {
+
+          tokenUsd = 1;
+
+        } else {
+
+          tokenUsd = (await (tokenMainnetAddress ?
+            CoingeckoRequests.Instance.makeRequest(`https://api.coingecko.com/api/v3/coins/ethereum/contract/${tokenMainnetAddress}`) :
+            CoingeckoRequests.Instance.makeRequest(`https://api.coingecko.com/api/v3/coins/avalanche-2/contract/${tokenAddress}`)))?.data?.market_data?.current_price.usd;
+
+        }
+
+        if (tokenUsd && avaxUsd) {
+          tokenPrice = tokenUsd / avaxUsd;
         }
 
       }

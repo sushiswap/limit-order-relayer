@@ -13,6 +13,7 @@ dotenv.config();
 validateEnv();
 
 new LimitOrderRelayer(
+  +process.env.CHAINID,
   watchLimitOrders,
   watchSushiwapPairs,
   executeOrders,

@@ -10,14 +10,13 @@ import { MyLogger } from '../utils/myLogger';
 interface IToken { chainId: number, address: string, name: string, symbol: string, decimals: number, logoUrl?: string };
 export interface ITokenList { name: string, logoURL?: string, keywords: any, timestamp: any, tokens: IToken[], version: any };
 
-export const getLimitOrderPairs = async (): Promise<IWatchPair[]> => {
+export const getLimitOrderPairs = async (chainId: number): Promise<IWatchPair[]> => {
 
-  const tokens = (DEFAULT_TOKEN_LIST as ITokenList).tokens.filter(token => token.chainId === +process.env.CHAINID);
+  const tokens = (DEFAULT_TOKEN_LIST as ITokenList).tokens.filter(token => token.chainId === chainId);
   const tokensMainnet = (DEFAULT_TOKEN_LIST as ITokenList).tokens.filter(token => token.chainId === ChainId.MAINNET);
 
   const watchPairs: IWatchPair[] = [];
-
-  const limitOrderPairs = await fetchLimitOrderPairs(+process.env.CHAINID);
+  const limitOrderPairs = await fetchLimitOrderPairs(chainId);
 
   await Promise.all(limitOrderPairs.map(async ([token0Symbol, token1Symbol]) => {
 

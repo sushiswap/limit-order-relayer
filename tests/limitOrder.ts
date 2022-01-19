@@ -13,6 +13,7 @@ describe('LimitOrderTest', () => {
   it('Executing 2 Limit Orders', async () => {
 
     const limitOrderRelayer = new LimitOrderRelayer(
+      1,
       mockLimitOrderWatcher,
       mockPairwatcher,
       mockExecuteOrders,
@@ -180,7 +181,7 @@ export class MockDatabase extends Database {
   connectDB = () => { return mockPromise(true) };
   setWatchPairs = () => { return mockPromise([undefined]) };
   dropPairs = () => { return mockPromise(true) };
-  saveWatchPairs = (wp) => { return getLimitOrderPairs() };
+  saveWatchPairs = (wp) => { return getLimitOrderPairs(1) };
   saveLimitOrder = (lo) => { return mockPromise(lo) };
   saveExecutedOrder = (eo) => { return mockPromise(eo) };
   getLimitOrders = (price: BigNumber, pairAddress: string, token0: string) => {

@@ -20,6 +20,9 @@ export const fetchLimitOrderPairs = function (chainId: ChainId): string[][] {
 }
 
 export const _limitOrderPairs = {
+  [ChainId.MAINNET]: [
+    ["WETH", "SUSHI"]
+  ],
   [ChainId.MATIC]: [
     ["WETH", "WMATIC"],
     ["WETH", "USDC"],
@@ -75,6 +78,10 @@ export const _limitOrderPairs = {
     ["SUSHI", "WBTC"],
     ["WMATIC", "CRV"],
     ["JPYC", "USDT"],
+  ],
+  [ChainId.AVALANCHE]: [
+    ["wMEMO", "MIM"],
+    ["MIM", "WAVAX"],
   ]
 } as { [chainId in ChainId]: string[][] };
 

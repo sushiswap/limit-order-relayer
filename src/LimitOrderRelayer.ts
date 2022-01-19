@@ -13,6 +13,7 @@ import { filter } from 'rxjs/operators';
 export class LimitOrderRelayer {
 
   // parameterize the following for easier testing
+  public chainId: number;
   public LimitOrderUpdates: (a: IWatchPair[]) => Observable<ILimitOrder>;
   public SushiswapPairUpdates: (a: IWatchPair[]) => Observable<PriceUpdate[]>;
   public executeOrders: (a: ExecutableOrder[], gasPrice: BigNumber) => Promise<IExecutedOrder[]>;
@@ -22,6 +23,7 @@ export class LimitOrderRelayer {
 
 
   constructor(
+    chainId: number,
     orderUpdates: (a: IWatchPair[]) => Observable<ILimitOrder>,
     pairUpdates: (a: IWatchPair[]) => Observable<PriceUpdate[]>,
     executeOrders: (a: ExecutableOrder[], gasPrice: BigNumber) => Promise<IExecutedOrder[]>,
@@ -29,6 +31,7 @@ export class LimitOrderRelayer {
     database: Database,
     networkPrices: NetworkPrices
   ) {
+    this.chainId = chainId;
     this.LimitOrderUpdates = orderUpdates;
     this.SushiswapPairUpdates = pairUpdates;
     this.executeOrders = executeOrders;
@@ -45,7 +48,7 @@ export class LimitOrderRelayer {
     if (dbError) return MyLogger.log(`Failed to connect to db: ${dbError}`);
 
 
-    const [watchPairs, err] = await safeAwait(getLimitOrderPairs());
+    const [watchPairs, err] = await safeAwait(getLimitOrderPairs(this.chainId));
 
 
     if (!watchPairs || watchPairs.length == 0 || !!err) return MyLogger.log(`No pairs to watch, err: ${err}`);
