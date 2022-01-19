@@ -57,7 +57,7 @@ export class Database {
 
     return model.save().then(() => {
 
-      MyLogger.log('Limit order saved ✔');
+      MyLogger.log(`Limit order saved ✔ ${limitOrder.digest}`);
 
       const current = new Date();
       const today = (new Date(current.getFullYear(), current.getMonth(), current.getDate())).getTime();

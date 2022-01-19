@@ -1,5 +1,6 @@
 import dotenv from 'dotenv';
 import { ChainId } from '@sushiswap/sdk';
+import { WETH9_ADDRESS } from '@sushiswap/core-sdk';
 
 dotenv.config();
 
@@ -89,6 +90,8 @@ export const getDesiredProfitToken = function (chainId: ChainId): string[] {
 
   if (chainId === ChainId.MATIC) {
     return ["WMATIC", "WETH", "SUSHI", "WBTC", "USDC", "DAI", "USDT"];
+  } else if (chainId == ChainId.AVALANCHE) {
+    return ["WAVAX"];
   }
 
 }

@@ -35,7 +35,7 @@ export async function executeOrders(ordersData: ExecutableOrder[], gasPrice: Big
       [order.tokenIn, order.tokenOut],
       amountExternal,
       executableOrder.inAmount,
-      getAdvancedReceiver(ChainId.MATIC),
+      getAdvancedReceiver(+process.env.CHAINID),
       process.env.PROFIT_RECEIVER_ADDRESS,
       keepTokenIn
     );
