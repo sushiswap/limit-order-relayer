@@ -1,0 +1,10 @@
+{
+    "uid": "limitorder-relayer-fantom-v1",
+    "append": true,
+    "watch": true,
+    "script": "./dist/index.js",
+    "sourceDir": "./",
+    "logFile": "logs.log",
+    "outFile": "out.log",
+    "errFile": "error.log"
+  }

@@ -191,6 +191,43 @@ export class NetworkPrices {
         if (tokenUsd && avaxUsd) {
           tokenPrice = tokenUsd / avaxUsd
         }
+      } else if (chainId === ChainId.FANTOM) {
+        let ftmUSD
+
+        if (this.cache['wftm']?.timestamp > new Date().getTime() - 60000) {
+          ftmUSD = this.cache['wftm']?.value
+        } else {
+          ftmUSD = (
+            await CoingeckoRequests.Instance.makeRequest(
+              `https://api.coingecko.com/api/v3/coins/fantom?localization=false&tickers=false&market_data=true&community_data=false&developer_data=false&sparkline=false`
+            )
+          )?.data?.market_data?.current_price.usd
+
+          this.cache['wftm'] = {
+            timestamp: new Date().getTime(),
+            value: ftmUSD,
+          }
+        }
+
+        let tokenUsd
+
+        if (isUSD) {
+          tokenUsd = 1
+        } else {
+          tokenUsd = (
+            await (tokenMainnetAddress
+              ? CoingeckoRequests.Instance.makeRequest(
+                  `https://api.coingecko.com/api/v3/coins/ethereum/contract/${tokenMainnetAddress}`
+                )
+              : CoingeckoRequests.Instance.makeRequest(
+                  `https://api.coingecko.com/api/v3/coins/fantom/contract/${tokenAddress}`
+                ))
+          )?.data?.market_data?.current_price.usd
+        }
+
+        if (tokenUsd && ftmUSD) {
+          tokenPrice = tokenUsd / ftmUSD
+        }
       }
     } catch (e) {
       throw new Error(`Couldn't fetch eth price of token: ${tokenAddress} ${e.toString().substring(0, 400)} ...`)

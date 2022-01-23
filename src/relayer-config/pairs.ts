@@ -91,6 +91,20 @@ export const _limitOrderPairs = {
     ['WBTC', 'WAVAX'],
     ['USDT', 'WAVAX'],
   ],
+  [ChainId.FANTOM]: [
+    ['WFTM', 'USDC'],
+    ['WETH', 'WFTM'],
+    ['fUSDT', 'WFTM'],
+    ['DAI', 'WETH'],
+    ['USDC', 'MIM'],
+    ['WETH', 'WBTC'],
+    ['SUSHI', 'WFTM'],
+    ['WFTM', 'LINK'],
+    ['WETH', 'CRV'],
+    ['WETH', 'YFI'],
+    ['WFTM', 'ICE'],
+    ['WFTM', 'LCD']
+  ]
 } as { [chainId in ChainId]: string[][] }
 
 export const getDesiredProfitToken = function (chainId: ChainId): string[] {
@@ -98,5 +112,7 @@ export const getDesiredProfitToken = function (chainId: ChainId): string[] {
     return ['WMATIC', 'WETH', 'SUSHI', 'WBTC', 'USDC', 'DAI', 'USDT']
   } else if (chainId == ChainId.AVALANCHE) {
     return ['WAVAX', 'TIME', 'MIM']
+  } else if (chainId == ChainId.FANTOM) {
+    return ['WFTM', 'USDC', 'DAI', 'MIM', 'fUSDT']
   }
 }
