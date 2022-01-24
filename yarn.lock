@@ -395,15 +395,31 @@
     tiny-warning "^1.0.0"
     toformat "^2.0.0"
 
+"@sushiswap/core-sdk@1.0.0-canary.63":
+  version "1.0.0-canary.63"
+  resolved "https://registry.yarnpkg.com/@sushiswap/core-sdk/-/core-sdk-1.0.0-canary.63.tgz#4352ab9afc5bbd786f775a6352f47044f386d33c"
+  integrity sha512-BCvyhquF/6pzNFwZ7W3V9f2qKQ1HMFSi6x4EJ6MeBXbXGgNRwFuRlOvVddRYBP6gMM6bYM3XD6xUQS2jm3N5Kw==
+  dependencies:
+    "@ethersproject/address" "^5.4.0"
+    "@ethersproject/bignumber" "^5.4.0"
+    "@ethersproject/providers" "^5.4.0"
+    "@ethersproject/solidity" "^5.4.0"
+    big.js "^6.1.1"
+    decimal.js-light "^2.5.0"
+    jsbi "^4.1.0"
+    tiny-invariant "^1.1.0"
+    tiny-warning "^1.0.0"
+    toformat "^2.0.0"
+
 "@sushiswap/default-token-list@^22.4.4":
   version "22.5.0"
   resolved "https://registry.yarnpkg.com/@sushiswap/default-token-list/-/default-token-list-22.5.0.tgz#7130ac1441074cddcf262586a83bb9211b85b5e6"
   integrity sha512-noHI2XFatVxmBtsnXTM2Y8JswfE+z6LUqfk9OsqRcsxNoWA67HKiED89U6NSEOojzIoYgyvEQqZobHwKflk8Gg==
 
-"@sushiswap/limit-order-sdk@1.0.0-canary.43":
-  version "1.0.0-canary.43"
-  resolved "https://registry.yarnpkg.com/@sushiswap/limit-order-sdk/-/limit-order-sdk-1.0.0-canary.43.tgz#33c8cb606aed6f5b65562b560745d6d6608a7d57"
-  integrity sha512-VNyJMm5d/CHzTTpMqIknX0aufmP45ueYz/gGh5oEj53aibbA5M3TxCHhbLsNY6V0Ek+ZfA2pgtf32FQV/BFR4g==
+"@sushiswap/limit-order-sdk@1.0.0-canary.49":
+  version "1.0.0-canary.49"
+  resolved "https://registry.yarnpkg.com/@sushiswap/limit-order-sdk/-/limit-order-sdk-1.0.0-canary.49.tgz#7214fa59a3e406f80d042dd6687d32c2dd347600"
+  integrity sha512-HEOZdxYkJcosnOKE3LaWKKegz8qc+h4G9Bdle1O7LBrs4tOHNeaaltYCs3OohkyzYZ/VDrBgMoan2op2oclndA==
   dependencies:
     "@ethersproject/abi" "^5.4.0"
     "@ethersproject/abstract-signer" "^5.4.0"
@@ -412,7 +428,7 @@
     "@ethersproject/experimental" "^5.4.0"
     "@ethersproject/signing-key" "^5.4.0"
     "@ethersproject/transactions" "^5.4.0"
-    "@sushiswap/core-sdk" "1.0.0-canary.57"
+    "@sushiswap/core-sdk" "1.0.0-canary.63"
     eip-712 "^0.4.0"
     isomorphic-unfetch "^3.0.0"
 
