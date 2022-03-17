@@ -8,7 +8,7 @@
     "build": "tsc",
     "start": "tsc && node dist/index.js",
     "copy-remote": "tsc && node dist/database/copy-remote.js",
-    "forever-polygon": "git fetch --all && git reset --hard origin/polygon-deployment && true > error.log && true > out.log && tsc && forever start forever/polygon.json"
+    "forever-polygon": "git fetch --all && git reset --hard origin/avalanche-deployment && true > error.log && true > out.log && tsc && forever start forever/avalanche.json"
   },
   "keywords": [],
   "author": "",
