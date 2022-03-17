@@ -7,53 +7,32 @@ import { IWatchPair, ILimitOrder } from '../models/models'
 import { MyLogger } from '../utils/myLogger'
 import { getOrderPrice } from '../utils/price'
 import { validateLimitOrderData } from './validOrders'
+import { io } from "socket.io-client"
 
-const socketUrl = SOCKET_URL
+const socketUrl = `wss://limit-order-ffo5rqmjnq-uc.a.run.app`
+const socket = io(socketUrl);
+socket.on("connect", () => {
+  console.log(socket.id); // x8WIv7-mJelg7on_ALbx
+});
 
-let socket: w3cwebsocket
-let intervalPointer: NodeJS.Timeout
-let onMessageFunction: (IMessageEvent) => void
-
-function startSocket(url: string, onMessage: (m: IMessageEvent) => void): w3cwebsocket {
-  socket = new w3cwebsocket(url)
-  socket.onerror = onError
-  socket.onopen = onOpen
-  socket.onclose = onClose
-  socket.onmessage = onMessage
-
-  onMessageFunction = onMessage
-
-  return socket
-}
-
-const onError = (e) => MyLogger.log(`SOCKET ERROR: ${e} `)
-
-const onClose = () => undefined
-
-const onOpen = () => {
-  clearInterval(intervalPointer)
-  intervalPointer = setInterval(heartbeat, 3000)
-}
-
-const heartbeat = async () => {
-  if (socket.readyState !== socket.OPEN) {
-    startSocket(socketUrl, onMessageFunction)
-  }
-}
+socket.on("disconnect", () => {
+  console.log(socket.id); // undefined
+});
 
 // receive orders from the websocket
 function _watchLimitOrders(watchPairs: IWatchPair[]): Observable<ILimitOrderData> {
   const updates = new Subject<ILimitOrderData>()
 
-  socket = startSocket(socketUrl, ({ data }: any) => {
-    const parsedData = JSON.parse(data)
+  
+  socket.on("sushi", (arg1) => {
+    // console.log(arg1);
 
-    if ((parsedData.tag = 'LIMIT_ORDER_V2')) {
-      const order: ILimitOrderData = parsedData.limitOrder
+    if ((arg1.tag = 'LIMIT_ORDER_V2')) {
+      delete arg1["tag"]
+      const order: ILimitOrderData = arg1
       updates.next(order)
     }
-  })
-
+  });
   return updates
 }
 
