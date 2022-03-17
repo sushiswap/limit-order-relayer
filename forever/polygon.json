@@ -1,5 +1,5 @@
 {
-  "uid": "limitorder-relayer-polygon-v1",
+  "uid": "limitorder-relayer-polygon-v1.1",
   "append": true,
   "watch": true,
   "script": "./dist/index.js",
