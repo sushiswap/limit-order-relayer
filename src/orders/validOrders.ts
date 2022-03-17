@@ -154,10 +154,11 @@ export function validateLimitOrderData(order: ILimitOrderData, watchPairs: IWatc
   }
 
   const correctChain = order.chainId === +process.env.CHAINID
-  const validSig = checkSignature(limitOrder)
-  const notExpired = !isExpired(limitOrder)
+  
+  // const validSig = checkSignature(limitOrder)
+  // const notExpired = !isExpired(limitOrder)
 
-  return correctChain && validSig && notExpired
+  return correctChain; /* && validSig && notExpired */
 }
 
 function checkSignature(limitOrder: LimitOrder): boolean {
