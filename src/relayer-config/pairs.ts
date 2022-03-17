@@ -23,6 +23,7 @@ export const fetchLimitOrderPairs = function (chainId: ChainId): string[][] {
 export const _limitOrderPairs = {
   [ChainId.ETHEREUM]: [
     ["ILV", "WETH"],
+    ["APE", "WETH"],
     ["USDC", "WETH"],
     ["WETH", "USDT"],
     ["TOKE", "WETH"],
