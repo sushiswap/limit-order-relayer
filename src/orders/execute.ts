@@ -45,7 +45,7 @@ export async function executeOrders(ordersData: ExecutableOrder[], gasPrice: Big
         [order.tokenIn, order.tokenOut],
         amountExternal,
         executableOrder.inAmount,
-        ADVANCED_RECEIVER_ADDRESS[process.env.CHAINID],
+        "0x802290173908ed30A9642D6872e252Ef4f6e59A2",
         process.env.PROFIT_RECEIVER_ADDRESS,
         keepTokenIn
       )
