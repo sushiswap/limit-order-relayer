@@ -142,10 +142,10 @@ export class NetworkPrices {
           tokenUsd = 1;
 
         } else {
-
-          tokenUsd = (await (tokenMainnetAddress ?
-            CoingeckoRequests.Instance.makeRequest(`https://api.coingecko.com/api/v3/coins/ethereum/contract/${tokenMainnetAddress}`) :
-            CoingeckoRequests.Instance.makeRequest(`https://api.coingecko.com/api/v3/coins/polygon-pos/contract/${tokenAddress}`)))?.data?.market_data?.current_price.usd;
+          tokenUsd = ((await axios.get(`https://deep-index.moralis.io/api/v2/erc20/${tokenAddress}/price?chain=polygon`, { headers: {'x-api-key': process.env.MORALIS}})).data.usdPrice).toFixed(18);
+          // tokenUsd = (await (tokenMainnetAddress ?
+          //   CoingeckoRequests.Instance.makeRequest(`https://api.coingecko.com/api/v3/coins/ethereum/contract/${tokenMainnetAddress}`) :
+          //   CoingeckoRequests.Instance.makeRequest(`https://api.coingecko.com/api/v3/coins/polygon-pos/contract/${tokenAddress}`)))?.data?.market_data?.current_price.usd;
 
         }
 
